@@ -6,7 +6,7 @@ settings:
 
 importers:
 
-  apps/web:
+  .:
     dependencies:
       isbot:
         specifier: ^5.1.17

@@ -2,9 +2,9 @@
   "extends": "./tsconfig.json",
   "include": [
     ".react-router/types/**/*",
-    "app/**/*",
-    "app/**/.server/**/*",
-    "app/**/.client/**/*",
+    "src/**/*",
+    "src/**/.server/**/*",
+    "src/**/.client/**/*",
     "workers/**/*",
     "worker-configuration.d.ts"
   ],
@@ -20,7 +20,7 @@
     "baseUrl": ".",
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
