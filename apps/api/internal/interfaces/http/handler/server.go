@@ -18,6 +18,7 @@ type Server struct {
 	container      *di.Container
 	menuService    *service.MenuService
 	workoutService *service.WorkoutService
+	summaryService *service.SummaryService
 	mux            *http.ServeMux
 }
 
@@ -26,11 +27,13 @@ func NewServer(container *di.Container) *Server {
 	// サービスの初期化
 	menuService := service.NewMenuService(container.DB)
 	workoutService := service.NewWorkoutService(container.DB)
+	summaryService := service.NewSummaryService(container.DB)
 
 	s := &Server{
 		container:      container,
 		menuService:    menuService,
 		workoutService: workoutService,
+		summaryService: summaryService,
 		mux:            http.NewServeMux(),
 	}
 
@@ -49,6 +52,10 @@ func NewServer(container *di.Container) *Server {
 
 	// セット
 	s.mux.HandleFunc("PATCH /sets/{id}", s.handleUpdateSet)
+
+	// トレーニングボリューム統計
+	s.mux.HandleFunc("GET /stats/weekly", s.handleGetCurrentWeekStats)
+	s.mux.HandleFunc("GET /stats/weekly/history", s.handleGetWeeklyStatsHistory)
 
 	return s
 }
@@ -260,4 +267,49 @@ func (s *Server) handleUpdateSet(w http.ResponseWriter, r *http.Request) {
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+// 週間トレーニングボリューム統計取得ハンドラー
+func (s *Server) handleGetCurrentWeekStats(w http.ResponseWriter, r *http.Request) {
+	// ユーザーID取得 (認証は実装予定)
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
+
+	// 現在週のトレーニングボリューム取得
+	summary, err := s.summaryService.GetCurrentWeeklySummary(r.Context(), userID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get current week stats: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンス返却
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(summary)
+}
+
+// 過去の週間トレーニングボリューム履歴取得ハンドラー
+func (s *Server) handleGetWeeklyStatsHistory(w http.ResponseWriter, r *http.Request) {
+	// ユーザーID取得 (認証は実装予定)
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
+
+	// クエリパラメータからlimitを取得（デフォルトは12週間）
+	limitStr := r.URL.Query().Get("limit")
+	limit := int32(12)
+	if limitStr != "" {
+		var limitInt int
+		_, err := fmt.Sscanf(limitStr, "%d", &limitInt)
+		if err == nil && limitInt > 0 {
+			limit = int32(limitInt)
+		}
+	}
+
+	// 週間統計履歴取得
+	summaries, err := s.summaryService.GetRecentWeeklySummaries(r.Context(), userID, limit)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get weekly stats history: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンス返却
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(dto.WeeklyVolumeSummaryResponse{Summaries: summaries})
 }

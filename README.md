@@ -1,13 +1,17 @@
-# BulkTrack – モノレポ概要
+# BulkTrack – README
 
 ## 1. BulkTrack とは？
 
-BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開発プロジェクトです。
+BulkTrack は **TypeScript + Go** を採用したフルスタック個人開発プロジェクトです。
 
-* **フロントエンド** – React Router v7 (Framework Mode) を **Cloudflare Workers** 上で SSR
-* **バックエンド** – Go 1.24 製 REST API を **Fly.io** にデプロイ
-* **データベース** – **Neon (PostgreSQL)**
-* **モノレポ管理** – **pnpm Workspaces** と **Go Workspace (`go.work`)**
+| レイヤ | 技術スタック | デプロイ先 |
+| ------ | ------------ | ---------- |
+| フロントエンド | React Router v7 (Framework Mode)、Vite、Tailwind CSS | **Cloudflare Workers / Pages** |
+| バックエンド | Go 1.24、Echo (REST)、sqlc | **Fly.io** |
+| データベース | **Neon (PostgreSQL)** | ― |
+| モノレポ管理 | **pnpm Workspaces** / **Go Workspace (`go.work`)** | ― |
+
+目的は「筋トレ記録アプリ」を題材に、**型安全**・**スキーマファースト**・**Serverless** を同時に検証することです。
 
 ---
 
@@ -22,6 +26,10 @@ BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開�
              ▼
       Cloudflare Pages ✧ CDN
 ```
+
+- **Edge SSR**: React Router v7 の *Framework Mode* を Workers 上でストリーミング SSR
+- **API → DB**: Go API は Serverless PostgreSQL (Neon) と pgx/v5 で接続
+- **ビルド**: Vite + Bun / Go Releaser を GitHub Actions で自動化
 
 ---
 
@@ -44,8 +52,6 @@ BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開�
 ├─ packages/                 # 共有ライブラリ
 │   ├─ ts-utils/             # TypeScript ヘルパー / API クライアント
 │   └─ go-shared/            # Go ドメインモデル / DTO
-├─ infra/                    # IaC (Terraform など)
-│   └─ cloudrun.tf
 ├─ scripts/                  # Makefile / Taskfile / lint スクリプト
 ├─ pnpm-workspace.yaml       # pnpm ワークスペース定義
 ├─ go.work                   # Go ≥ 1.22 ワークスペース
@@ -53,326 +59,208 @@ BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開�
 └─ .github/workflows/        # CI/CD
 ```
 
-### 3.2 Go バックエンド: DDD + レイヤード構成
+<details>
+<summary>ディレクトリ詳細 (Goバージョン)</summary>
 
-```
+```text
 apps/
-└─ api/                         # Go バックエンド (独立 go.mod)
-   ├─ cmd/                      # エントリポイント
-   │   └─ server/
-   │       └─ main.go
+└─ api/
+   ├─ cmd/server/             # main.go
    ├─ internal/
-   │   ├─ domain/              # ≒ エンタープライズ層
-   │   │   ├─ training/
-   │   │   │   ├─ model.go     # エンティティ & VO
-   │   │   │   ├─ service.go   # ドメインサービス (集約横断)
-   │   │   │   └─ errors.go
-   │   │   └─ common/
-   │   ├─ application/         # ユースケース層
-   │   │   ├─ dto/             # 入出力 DTO (query, command)
-   │   │   ├─ usecase/         # インターフェース
-   │   │   └─ service/         # 実装 (orchestrator)
-   │   ├─ infrastructure/      # DB / 外部 API 実装
-   │   │   ├─ persistence/
-   │   │   │   ├─ sqlc/        # 自動生成コード
-   │   │   │   └─ training_repo.go
-   │   │   └─ db/              # スキーマとSQL
-   │   │       ├─ schema.sql   # データベーススキーマ定義
-   │   │       └─ queries/     # SQLCクエリ
-   │   └─ interfaces/          # プレゼンテーション層
-   │       └─  http/
-   │           ├─ handler/     # echo / chi など
-   │           └─ middleware/
-   ├─ pkg/                     # 共通ユーティリティ (公開可)
-   ├─ test/                    # e2e / integration
-   ├─ sqlc.yaml                # sqlc 設定
-   └─ Dockerfile
+   │   ├─ domain/             # エンタープライズ層
+   │   │   └─ training/       # エンティティ / VO
+   │   ├─ application/        # ユースケース層
+   │   ├─ infrastructure/     # DB / API 実装 (sqlc)
+   │   └─ interfaces/http/    # プレゼンテーション層
+   └─ pkg/                    # 公開ユーティリティ
 ```
 
-* **依存方向**: `interfaces → application → domain` と `infrastructure → application`（DI）
-- Circular 依存を避けるため、domain は他層に import しない
-- application から infrastructure へは インターフェース逆依存 (DI)
-      - 例: TrainingRepository インタフェースは application に置き、実装は infrastructure/persistence
-* DB アクセスは **sqlc** を使用して型安全なコードを生成
+</details>
 
 ---
 
-## 4. データベーススキーマ（PostgreSQL）とSQLCによる管理
+## 4. React Router v7 – 型安全なルーティング
 
-### 4.1 データベーススキーマ
+BulkTrack では **typegen** 機能を有効化し、ルートパラメータやアクションの型を自動生成しています。
+
+1. **初回のみ** `bunx react-router typegen` を実行
+2. dev サーバー (`pnpm dev`) 起動中はファイル変更で自動再生成
+
+```ts
+// app/routes/users.$id/route.tsx
+import type { Route } from "./+types/users.$id";
+
+export async function loader({ params }: Route.LoaderArgs) {
+  return fetch(`/api/users/${params.id}`).then((r) => r.json());
+}
+```
+
+### tsconfig 設定
+
+```jsonc
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler",   // ★ 重要 – Workers 環境で Node built‑ins を除外
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./*"]
+    }
+  }
+}
+```
+
+> **Tips** Cloudflare Workers では `fs`, `path` など Node コアモジュールを import するとビルドに失敗します。React Router プラグインの `platform: "cloudflare-workers"` オプションを必ず設定してください。
+
+---
+
+## 5. Go バックエンド – DDD + Layered Architecture
+
+- 依存方向は `interfaces → application → domain`。`infrastructure` は application インターフェースを実装して注入 (DI)。
+- DB アクセスは **sqlc** による型安全なコード生成。
+- テスト容易性を高めるため、ドメイン層はフレームワーク非依存。
+
+<details>
+<summary>レイアウト図</summary>
+
+```text
+application ──┐
+              │ calls (interface)
+domain ◄──────┘
+▲   ▲
+│   │ use
+│   └───────── interfaces (HTTP)
+│             ▲
+│ implements  │
+└───────────── infrastructure (DB)
+```
+
+</details>
+
+---
+
+## 6. データベーススキーマ & SQLC
 
 ```sql
--- users
+-- users\CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE users (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email       TEXT UNIQUE NOT NULL,
   nickname    TEXT,
   created_at  TIMESTAMPTZ DEFAULT now()
 );
-
--- training menus
-CREATE TABLE menus (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
-  name       TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (user_id, name)
-);
-
--- menu_items: planned sets per menu
-CREATE TABLE menu_items (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  menu_id     UUID REFERENCES menus(id) ON DELETE CASCADE,
-  exercise    TEXT NOT NULL,
-  set_order   INT  NOT NULL,
-  planned_reps INT,
-  UNIQUE (menu_id, set_order)
-);
-
--- workouts (actual sessions)
-CREATE TABLE workouts (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id      UUID REFERENCES users(id) ON DELETE CASCADE,
-  menu_id      UUID REFERENCES menus(id),
-  started_at   TIMESTAMPTZ DEFAULT now(),
-  note         TEXT
-);
-
--- sets (actual performance)
-CREATE TABLE sets (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  workout_id  UUID REFERENCES workouts(id) ON DELETE CASCADE,
-  exercise    TEXT NOT NULL,
-  set_order   INT  NOT NULL,
-  weight_kg   NUMERIC(5,2) NOT NULL,
-  reps        INT NOT NULL,
-  rpe         NUMERIC(3,1),
-  UNIQUE (workout_id, set_order)
-);
-
--- weekly summary (materialized view)
-CREATE MATERIALIZED VIEW weekly_summaries AS
-SELECT
-  user_id,
-  date_trunc('week', w.started_at)::date AS week,
-  SUM(weight_kg * reps)              AS total_volume,
-  MAX(weight_kg * (1 + reps / 30.0)) AS est_1rm
-FROM workouts w
-JOIN sets s ON s.workout_id = w.id
-GROUP BY user_id, week;
+-- 以下略 (menus, workouts, sets ...)
 ```
 
-### 4.2 スキーマ管理とデータアクセス
-
-データベーススキーマ管理は「スキーマファーストアプローチ」を採用しています：
-
-1. **単一の真実源**: `internal/infrastructure/db/schema.sql` ファイルが唯一の真実源（Single Source of Truth）
-2. **型安全なコード生成**: スキーマとSQLクエリから型安全なGoコードを自動生成
-3. **直接適用**: スキーマはデータベースに直接適用され、データベースの状態を正確に反映
-
-#### SQLCの設定と使用方法
-
-SQLCは次の設定で使用しています：
-
-```yaml
-# sqlc.yaml
-version: "2"
-sql:
-  - engine: "postgresql"
-    schema: "internal/infrastructure/db/schema.sql"
-    queries: "internal/infrastructure/db/queries"
-    gen:
-      go:
-        package: "sqlc"
-        out: "internal/infrastructure/sqlc"
-        sql_package: "pgx/v5"
-        emit_json_tags: true
-        emit_interface: true
-        emit_empty_slices: true
-        overrides:
-          - db_type: "uuid"
-            go_type: "github.com/google/uuid.UUID"
-          - db_type: "timestamptz"
-            go_type: "time.Time"
-```
-
-重要なポイント：
-- `sql_package: "pgx/v5"` - PostgreSQLドライバとしてpgx/v5を使用
-- UUIDとTimestamp型の適切なマッピングを設定
-- インターフェースを生成するように設定（リポジトリパターン用）
-
-#### コンパイルエラーを回避するための設定
-
-SQLCで生成されたコードが正しくコンパイルされるために：
-
-1. **必要な依存関係**: 以下のパッケージを`go.mod`に追加してください
-   ```
-   github.com/google/uuid
-   github.com/jackc/pgx/v5
-   ```
-
-2. **スキーマファイル**: UUIDの使用には`uuid-ossp`拡張が必要
-   ```sql
-   -- 必ずスキーマファイルの先頭に追加
-   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-   ```
-
-3. **生成後の確認**: コード生成後は試験的にビルドして依存関係を確認
-   ```bash
-   # コンパイルエラーがないか確認
-   cd apps/api
-   go build ./...
-   ```
-
-#### スキーマ更新ワークフロー
+- スキーマファイルは `internal/infrastructure/db/schema.sql` が Single Source of Truth。
+- `sqlc generate` で Go 構造体とリポジトリインターフェースを出力 (pgx/v5)。
 
 ```bash
-# 1. schema.sqlファイルを更新
-# これが唯一の真実源（Single Source of Truth）
-
-# 2. SQLCでコード生成
 cd apps/api
-sqlc generate
-
-# 3. コンパイルに問題がないか確認
-go build ./...
-
-# 4. 生成されたコードを使ってリポジトリ実装
-# internal/infrastructure/sqlc/ に生成されたコードを利用
-```
-
-#### データベース初期化と更新
-
-```bash
-# データベースへの適用（.envファイルから接続情報を読み込む例）
-cd apps/api
-source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
+sqlc generate  # 型安全コード生成
 ```
 
 ---
 
-## 5. 前提ツール
+## 7. 前提ツール
 
-* **Node.js** ≥ 20 + **pnpm** ≥ 9
-* **Go** ≥ 1.22
-* **Docker**
-* **flyctl CLI** (認証済み)
-* **wrangler CLI**
-* **sqlc CLI**
-* **psql** (PostgreSQLクライアント)
+| Tool | Min ver | 用途 |
+| ---- | ------- | ---- |
+| Node.js | 20.x | フロントエンドビルド |
+| pnpm | 9.x | モノレポ管理 |
+| Bun | 1.x | react‑router typegen 実行 |
+| Go | 1.24 | API サーバー |
+| Docker | ― | CI / Fly.io デプロイ |
+| flyctl | 1.x | Fly.io デプロイ |
+| wrangler | 3.x | Workers デプロイ |
+| sqlc | 1.x | DB コード生成 |
+| psql | 15+ | スキーマ適用 |
 
 ---
 
-## 6. ローカル開発
+## 8. ローカル開発
 
-### 6.1 フロントエンド (Workers)
+### 8.1 フロントエンド (Workers)
 
 ```bash
-pnpm --filter web dev   # wrangler dev --remote で HMR
+pnpm --filter web dev        # wrangler dev --remote
 ```
 
-### 6.2 バックエンド (Go API)
+### 8.2 バックエンド (Go API)
 
 ```bash
 cd apps/api
-# .envファイルから環境変数を読み込む
+cp .env.example .env         # DB 接続情報を設定
 source .env
-go run ./cmd/server
+
+go run ./cmd/server          # localhost:8080
 ```
 
-### 6.3 データベース操作
-
-#### 初期セットアップ
+### 8.3 DB スキーマ & コード生成
 
 ```bash
-# .envファイルの準備（.env.exampleをコピーして編集）
-cp apps/api/.env.example apps/api/.env
-# エディタで.envを開き、実際の接続情報を設定する
-vi apps/api/.env
-
-# スキーマ適用
 cd apps/api
 source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
-
-# コード生成
 sqlc generate
-```
-
-#### スキーマ更新時
-
-```bash
-# スキーマを更新した後
-cd apps/api
-# コード再生成
-sqlc generate
-# データベースに反映
-source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
 ```
 
 ---
 
-## 7. デプロイ手順
+## 9. デプロイ手順
 
-### 7.1 API – Fly.io
+### 9.1 API – Fly.io
 
 ```bash
-# プロジェクトルートから実行
-./scripts/deploy-api.sh
-
-# または、詳細設定する場合
+./scripts/deploy-api.sh       # 推奨
+# または手動
 cd apps/api
 flyctl deploy --dockerfile ./Dockerfile
 ```
 
-### 7.2 環境変数の設定
-
-```bash
-# データベース接続情報を設定
-flyctl secrets set DATABASE_URL='postgres://user:password@host:port/dbname'
-```
-
-### 7.3 フロントエンド – Cloudflare Workers
+### 9.2 フロントエンド – Cloudflare Workers
 
 ```bash
 cd apps/web
-wrangler deploy
+wrangler deploy              # wrangler.toml 使用
 ```
 
----
+### 9.3 環境変数 (例)
 
-## 8. 環境変数
-
-| 変数名 | 例 | 作用範囲 |
-|--------|----|-----------|
-| `DATABASE_URL` | `postgres://user:password@host:port/dbname` | Fly.io / ローカル開発 |
-| `PORT` | `8080` (Fly.io が自動注入) | Fly.io |
+| Name | Example | Scope |
+| ---- | ------- | ----- |
+| DATABASE_URL | postgres://user:pwd@host:port/db | API / Local |
+| PORT | 8080 (Fly.io 注入) | API |
 
 ---
 
-## 9. よく使うコマンド
+## 10. よく使うコマンド
 
 ```bash
 # 依存整理
-go work sync && go mod tidy ./...
 pnpm install
+ go work sync && go mod tidy ./...
 
-# テスト
-go test ./...
-pnpm test -r
+# テスト & Lint
+pnpm -r test && pnpm -r lint
+ go test ./... && go vet ./...
 
-# Lint
-go vet ./...
-pnpm -r lint
+# 型生成 (React Router)
+ bunx react-router typegen
 
-# Fly.io へのデプロイ
-./scripts/deploy-api.sh
-
-# Fly.io ログの確認
-flyctl logs
-
-# スキーマ関連
+# スキーマ & DB
 cd apps/api
-sqlc generate                                        # クエリからコード生成
-source .env && psql "$DATABASE_URL" \               # スキーマ適用（安全なパターン）
-  -f internal/infrastructure/db/schema.sql
+sqlc generate
+source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
 ```
+
+---
+
+## 11. AI / Copilot 用プロンプト集
+
+| シナリオ | プロンプト例 | 補足 |
+| -------- | ------------ | ---- |
+| ルート雛形生成 | `"/posts/:slug" 用の React Router v7 ルート (TypeScript) を生成し、型は "+types/posts.$slug" を import してください。` | `import type` を明示すると誤 import を防げる |
+| Worker ハンドラ | `Cloudflare Workers の fetch ハンドラを createCloudflareHandler で実装し、streaming HTML を返すコードを出力して` | Node API 誤用を回避 |
+| tsconfig 修正 | `Cannot find module './+types/...' を解消する tsconfig 設定は?` | エラーメッセージ全文を貼る |
