@@ -29,9 +29,7 @@ export function MenuList({ menus, loading, error }: MenuListProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-        {error}
-      </div>
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>
     );
   }
 
@@ -63,7 +61,12 @@ export function MenuList({ menus, loading, error }: MenuListProps) {
             </Link>
           </div>
           <p className="text-gray-600">
-            作成日: {new Date(menu.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+            作成日:{" "}
+            {new Date(menu.created_at).toLocaleDateString("ja-JP", {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric",
+            })}
           </p>
           <h3 className="font-medium mt-2">メニュー項目:</h3>
           <ul className="list-disc pl-5 mt-1">
@@ -77,4 +80,4 @@ export function MenuList({ menus, loading, error }: MenuListProps) {
       ))}
     </ul>
   );
-} 
+}

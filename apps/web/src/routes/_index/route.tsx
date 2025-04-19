@@ -21,8 +21,8 @@ export default function Component() {
           description="筋トレやウェイトトレーニングのセッションを記録します。"
           links={[
             { to: "/workouts", label: "一覧を見る" },
-            { to: "/workouts/new", label: "新規作成" }
-          ]} 
+            { to: "/workouts/new", label: "新規作成" },
+          ]}
         />
 
         <FeatureCard
@@ -30,18 +30,16 @@ export default function Component() {
           description="頻繁に行うトレーニングパターンをメニューとして保存します。"
           links={[
             { to: "/menus", label: "一覧を見る" },
-            { to: "/menus/new", label: "新規作成" }
+            { to: "/menus/new", label: "新規作成" },
           ]}
         />
 
         <FeatureCard
           title="ボリューム記録"
           description="部位ごとの週間トレーニング量を確認します。"
-          links={[
-            { to: "/volume-log", label: "ボリューム記録を見る" }
-          ]}
+          links={[{ to: "/volume-log", label: "ボリューム記録を見る" }]}
         />
       </div>
     </div>
   );
-} 
+}

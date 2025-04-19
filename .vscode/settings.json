@@ -1,5 +1,22 @@
 {
 	"files.associations": {
 		"wrangler.json": "jsonc"
+	},
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.organizeImports.biome": "always"
+	},
+	"[javascript][typescript][typescriptreact][javascriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"files.exclude": {
+		"**/.git": true,
+		"**/.svn": true,
+		"**/.hg": true,
+		"**/CVS": true,
+		"**/.DS_Store": true,
+		"**/Thumbs.db": true,
+		"**/.react-router": true,
+		"**/+types": true
 	}
 }

@@ -25,4 +25,4 @@ export default function VolumeLog() {
       <VolumeChart />
     </div>
   );
-} 
+}

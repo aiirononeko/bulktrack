@@ -1,5 +1,5 @@
-import { Form, useLoaderData } from "react-router";
 import { useState } from "react";
+import { Form, useLoaderData } from "react-router";
 
 type ExerciseTemplate = {
   id: string;
@@ -21,7 +21,7 @@ type MenuExercise = {
 export function MenuForm() {
   const { exercises } = useLoaderData() as { exercises: ExerciseTemplate[] };
   const [menuExercises, setMenuExercises] = useState<MenuExercise[]>([]);
-  
+
   const addExercise = () => {
     const newExercise: MenuExercise = {
       id: `temp-${Date.now()}`,
@@ -29,12 +29,12 @@ export function MenuForm() {
       sets: 3,
       reps: 10,
       weight: 0,
-      notes: ""
+      notes: "",
     };
-    
+
     setMenuExercises([...menuExercises, newExercise]);
   };
-  
+
   return (
     <Form method="post" className="space-y-6">
       <div>
@@ -50,7 +50,7 @@ export function MenuForm() {
           required
         />
       </div>
-      
+
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
           説明
@@ -63,7 +63,7 @@ export function MenuForm() {
           className="w-full rounded-md border border-gray-300 px-3 py-2"
         />
       </div>
-      
+
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-medium">エクササイズ</h3>
@@ -75,7 +75,7 @@ export function MenuForm() {
             + エクササイズを追加
           </button>
         </div>
-        
+
         {menuExercises.length === 0 ? (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
             <p className="text-gray-500">エクササイズを追加してください</p>
@@ -86,7 +86,10 @@ export function MenuForm() {
               <div key={exercise.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="grid grid-cols-1 gap-4 mb-2">
                   <div>
-                    <label htmlFor={`exercises[${index}].name`} className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor={`exercises[${index}].name`}
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       エクササイズ名
                     </label>
                     <input
@@ -100,7 +103,10 @@ export function MenuForm() {
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-2">
                   <div>
-                    <label htmlFor={`exercises[${index}].sets`} className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor={`exercises[${index}].sets`}
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       セット数
                     </label>
                     <input
@@ -114,7 +120,10 @@ export function MenuForm() {
                     />
                   </div>
                   <div>
-                    <label htmlFor={`exercises[${index}].reps`} className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor={`exercises[${index}].reps`}
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       レップ数
                     </label>
                     <input
@@ -128,7 +137,10 @@ export function MenuForm() {
                     />
                   </div>
                   <div>
-                    <label htmlFor={`exercises[${index}].weight`} className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor={`exercises[${index}].weight`}
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       重量 (kg)
                     </label>
                     <input
@@ -144,7 +156,10 @@ export function MenuForm() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor={`exercises[${index}].notes`} className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor={`exercises[${index}].notes`}
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     メモ
                   </label>
                   <textarea
@@ -160,7 +175,7 @@ export function MenuForm() {
           </div>
         )}
       </div>
-      
+
       <div className="pt-4">
         <button
           type="submit"
@@ -171,4 +186,4 @@ export function MenuForm() {
       </div>
     </Form>
   );
-} 
+}

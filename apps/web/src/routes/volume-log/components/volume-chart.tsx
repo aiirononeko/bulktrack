@@ -1,6 +1,6 @@
 import { useLoaderData } from "react-router";
 
-type MuscleGroup = 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core';
+type MuscleGroup = "chest" | "back" | "legs" | "shoulders" | "arms" | "core";
 
 type VolumeData = {
   week: string;
@@ -29,11 +29,11 @@ export function VolumeChart() {
           <p className="text-gray-500">ここにチャートが表示されます</p>
         </div>
       </div>
-      
+
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-medium mb-4">部位別ボリューム</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {['chest', 'back', 'legs', 'shoulders', 'arms', 'core'].map((muscle) => (
+          {["chest", "back", "legs", "shoulders", "arms", "core"].map((muscle) => (
             <div key={muscle} className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-medium mb-2 capitalize">{muscle}</h3>
               <p className="text-lg font-bold">0 kg</p>
@@ -43,4 +43,4 @@ export function VolumeChart() {
       </div>
     </div>
   );
-} 
+}

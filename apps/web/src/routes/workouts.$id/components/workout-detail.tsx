@@ -14,7 +14,7 @@ type WorkoutProps = {
     title: string;
     date: string;
     exercises: Exercise[];
-  }
+  };
 };
 
 export function WorkoutDetail({ workout }: WorkoutProps) {
@@ -51,4 +51,4 @@ export function WorkoutDetail({ workout }: WorkoutProps) {
       )}
     </div>
   );
-} 
+}

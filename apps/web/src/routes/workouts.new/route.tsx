@@ -19,10 +19,10 @@ export async function loader() {
 // フォーム送信アクション
 export async function action({ request }: { request: Request }) {
   const formData = await request.formData();
-  
+
   // ここでデータを処理、保存
   console.log("新規ワークアウトデータ:", Object.fromEntries(formData));
-  
+
   // 保存後は一覧ページにリダイレクト
   return redirect("/workouts");
 }
@@ -34,4 +34,4 @@ export default function NewWorkout() {
       <WorkoutForm />
     </div>
   );
-} 
+}

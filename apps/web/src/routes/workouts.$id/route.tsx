@@ -1,4 +1,4 @@
-import { useParams, useLoaderData } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { WorkoutDetail } from "./components/workout-detail";
 
 // 型定義をインポートまたは定義
@@ -33,14 +33,12 @@ export async function loader({ params }: { params: { id: string } }) {
       title: `サンプルワークアウト ${params.id}`,
       date: new Date().toLocaleDateString(),
       exercises: [],
-    } as Workout
+    } as Workout,
   };
 }
 
 export default function Component() {
   const { workout } = useLoaderData() as { workout: Workout };
-  
-  return (
-    <WorkoutDetail workout={workout} />
-  );
-} 
+
+  return <WorkoutDetail workout={workout} />;
+}

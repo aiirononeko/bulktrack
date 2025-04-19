@@ -26,12 +26,12 @@ export async function loader({ context }: LoaderFunctionArgs) {
     // APIリクエスト
     const apiUrl = `${context.cloudflare.env.API_URL || "http://localhost:8080"}/menus`;
     const response = await fetch(apiUrl);
-    
+
     if (!response.ok) {
       throw new Error("メニューの取得に失敗しました");
     }
-    
-    const data = await response.json() as Menu[];
+
+    const data = (await response.json()) as Menu[];
     return { menus: data, error: null };
   } catch (err) {
     console.error("Error fetching menus:", err);
@@ -40,7 +40,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 }
 
 export default function Menus() {
-  const { menus, error } = useLoaderData<{ menus: Menu[], error: string | null }>();
+  const { menus, error } = useLoaderData<{ menus: Menu[]; error: string | null }>();
   const loading = false;
 
   return (
@@ -58,4 +58,4 @@ export default function Menus() {
       <MenuList menus={menus} loading={loading} error={error} />
     </div>
   );
-} 
+}

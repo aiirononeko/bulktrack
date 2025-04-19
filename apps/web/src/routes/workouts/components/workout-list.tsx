@@ -13,9 +13,7 @@ export function WorkoutList() {
   if (workouts.length === 0) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p className="text-gray-600 mb-4">
-          トレーニングを開始するには、メニューを選択してください
-        </p>
+        <p className="text-gray-600 mb-4">トレーニングを開始するには、メニューを選択してください</p>
         <Link
           to="/menus"
           className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
@@ -29,7 +27,7 @@ export function WorkoutList() {
   return (
     <div className="space-y-4">
       {workouts.map((workout) => (
-        <div 
+        <div
           key={workout.id}
           className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
         >
@@ -41,4 +39,4 @@ export function WorkoutList() {
       ))}
     </div>
   );
-} 
+}
