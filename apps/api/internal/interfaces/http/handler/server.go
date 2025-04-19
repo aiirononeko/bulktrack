@@ -38,8 +38,10 @@ func NewServer(container *di.Container) *Server {
 	s.mux.HandleFunc("GET /health", s.handleHealth)
 
 	// トレーニングメニュー
+	s.mux.HandleFunc("GET /menus", s.handleListMenus)
 	s.mux.HandleFunc("POST /menus", s.handleCreateMenu)
 	s.mux.HandleFunc("GET /menus/{id}", s.handleGetMenu)
+	s.mux.HandleFunc("DELETE /menus/{id}", s.handleDeleteMenu)
 
 	// ワークアウト
 	s.mux.HandleFunc("POST /workouts", s.handleStartWorkout)
@@ -122,6 +124,45 @@ func (s *Server) handleGetMenu(w http.ResponseWriter, r *http.Request) {
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+// メニュー削除ハンドラー
+func (s *Server) handleDeleteMenu(w http.ResponseWriter, r *http.Request) {
+	// メニューIDの取得
+	idStr := strings.TrimPrefix(r.URL.Path, "/menus/")
+	idStr = strings.TrimSuffix(idStr, "/")
+
+	menuID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid menu ID", http.StatusBadRequest)
+		return
+	}
+
+	// メニュー削除
+	if err := s.menuService.DeleteMenu(r.Context(), menuID); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete menu: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// 削除成功のレスポンス
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// メニュー一覧取得ハンドラー
+func (s *Server) handleListMenus(w http.ResponseWriter, r *http.Request) {
+	// ユーザーID取得 (認証は実装予定)
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
+
+	// メニュー一覧取得
+	menus, err := s.menuService.ListMenusByUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list menus: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンス返却
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(menus)
 }
 
 // ワークアウト開始ハンドラー

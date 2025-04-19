@@ -125,3 +125,73 @@ func (s *MenuService) GetMenuWithItems(ctx context.Context, menuID uuid.UUID) (*
 		Items:     items,
 	}, nil
 }
+
+// DeleteMenu はメニューを削除する
+func (s *MenuService) DeleteMenu(ctx context.Context, menuID uuid.UUID) error {
+	// トランザクション開始
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := sqlc.New(tx)
+
+	// メニュー項目の削除（外部キー制約があるため、先に削除）
+	if err := qtx.DeleteMenuItem(ctx, menuID); err != nil {
+		return err
+	}
+
+	// メニューの削除
+	if err := qtx.DeleteMenu(ctx, menuID); err != nil {
+		return err
+	}
+
+	// トランザクションコミット
+	return tx.Commit(ctx)
+}
+
+// ListMenusByUser はユーザーに紐づくメニュー一覧を取得する
+func (s *MenuService) ListMenusByUser(ctx context.Context, userID uuid.UUID) ([]dto.MenuResponse, error) {
+	// ユーザーIDをpgtype.UUIDに変換
+	pgUserID := pgtype.UUID{Bytes: userID, Valid: true}
+
+	// メニュー一覧の取得
+	menus, err := s.queries.ListMenusByUser(ctx, pgUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// レスポンス作成
+	result := make([]dto.MenuResponse, 0, len(menus))
+	for _, menu := range menus {
+		// メニューIDをpgtype.UUIDに変換
+		pgMenuID := pgtype.UUID{Bytes: menu.ID, Valid: true}
+
+		// メニュー項目の取得
+		menuItems, err := s.queries.ListMenuItemsByMenu(ctx, pgMenuID)
+		if err != nil {
+			return nil, err
+		}
+
+		// DTOに変換
+		items := make([]dto.MenuItemView, 0, len(menuItems))
+		for _, item := range menuItems {
+			items = append(items, dto.MenuItemView{
+				ID:          item.ID,
+				Exercise:    item.Exercise,
+				SetOrder:    item.SetOrder,
+				PlannedReps: item.PlannedReps.Int32,
+			})
+		}
+
+		result = append(result, dto.MenuResponse{
+			ID:        menu.ID,
+			Name:      menu.Name,
+			CreatedAt: menu.CreatedAt.Time.Format(time.RFC3339),
+			Items:     items,
+		})
+	}
+
+	return result, nil
+}
