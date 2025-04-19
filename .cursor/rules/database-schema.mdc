@@ -1,0 +1,93 @@
+---
+description: データベーススキーマとSQLCの使用方法
+globs: ["apps/api/internal/infrastructure/db//.sql"]
+alwaysApply: false
+---
+
+# データベーススキーマ（PostgreSQL）とSQLCによる管理
+
+BulkTrackは「スキーマファーストアプローチ」を採用しています。スキーマファイルが唯一の真実源（Single Source of Truth）となり、SQLCを使用して型安全なGoコードを自動生成します。
+
+## 主要テーブル
+
+```
+-- users
+CREATE TABLE users (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email       TEXT UNIQUE NOT NULL,
+  nickname    TEXT,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- training menus
+CREATE TABLE menus (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
+  name       TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (user_id, name)
+);
+
+-- menu_items: planned sets per menu
+CREATE TABLE menu_items (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  menu_id     UUID REFERENCES menus(id) ON DELETE CASCADE,
+  exercise    TEXT NOT NULL,
+  set_order   INT  NOT NULL,
+  planned_reps INT,
+  UNIQUE (menu_id, set_order)
+);
+
+-- workouts (actual sessions)
+CREATE TABLE workouts (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id      UUID REFERENCES users(id) ON DELETE CASCADE,
+  menu_id      UUID REFERENCES menus(id),
+  started_at   TIMESTAMPTZ DEFAULT now(),
+  note         TEXT
+);
+
+-- sets (actual performance)
+CREATE TABLE sets (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  workout_id  UUID REFERENCES workouts(id) ON DELETE CASCADE,
+  exercise    TEXT NOT NULL,
+  set_order   INT  NOT NULL,
+  weight_kg   NUMERIC(5,2) NOT NULL,
+  reps        INT NOT NULL,
+  rpe         NUMERIC(3,1),
+  UNIQUE (workout_id, set_order)
+);
+```
+
+## SQLCの利用方法
+
+```
+# sqlc.yaml
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "internal/infrastructure/db/schema.sql"
+    queries: "internal/infrastructure/db/queries"
+    gen:
+      go:
+        package: "sqlc"
+        out: "internal/infrastructure/sqlc"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_interface: true
+        emit_empty_slices: true
+```
+
+## スキーマ更新ワークフロー
+
+```
+# 1. schema.sqlファイルを更新
+# 2. SQLCでコード生成
+cd apps/api
+sqlc generate
+# 3. コンパイルに問題がないか確認
+go build ./...
+# 4. データベースに適用
+source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
+```

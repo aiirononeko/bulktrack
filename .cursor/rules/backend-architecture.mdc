@@ -1,0 +1,50 @@
+---
+description: Goバックエンドのアーキテクチャと構造
+globs: ["apps/api//.go"]
+alwaysApply: false
+---
+
+# Goバックエンド: DDD + レイヤード構成
+
+バックエンドはDDDアプローチとレイヤードアーキテクチャに基づいて構成されています。
+
+```
+apps/
+└─ api/                         # Go バックエンド (独立 go.mod)
+   ├─ cmd/                      # エントリポイント
+   │   └─ server/
+   │       └─ main.go
+   ├─ internal/
+   │   ├─ domain/              # ≒ エンタープライズ層
+   │   │   ├─ training/
+   │   │   │   ├─ model.go     # エンティティ & VO
+   │   │   │   ├─ service.go   # ドメインサービス (集約横断)
+   │   │   │   └─ errors.go
+   │   │   └─ common/
+   │   ├─ application/         # ユースケース層
+   │   │   ├─ dto/             # 入出力 DTO (query, command)
+   │   │   ├─ usecase/         # インターフェース
+   │   │   └─ service/         # 実装 (orchestrator)
+   │   ├─ infrastructure/      # DB / 外部 API 実装
+   │   │   ├─ persistence/
+   │   │   │   ├─ sqlc/        # 自動生成コード
+   │   │   │   └─ training_repo.go
+   │   │   └─ db/              # スキーマとSQL
+   │   │       ├─ schema.sql   # データベーススキーマ定義
+   │   │       └─ queries/     # SQLCクエリ
+   │   └─ interfaces/          # プレゼンテーション層
+   │       └─  http/
+   │           ├─ handler/     # echo / chi など
+   │           └─ middleware/
+   ├─ pkg/                     # 共通ユーティリティ (公開可)
+   ├─ test/                    # e2e / integration
+   ├─ sqlc.yaml                # sqlc 設定
+   └─ Dockerfile
+```
+
+## 依存関係の流れ
+
+* **依存方向**: `interfaces → application → domain` と `infrastructure → application`（DI）
+* domain は他層に import されず、他層が domain に依存
+* application から infrastructure へは インターフェース逆依存 (DI)
+  * 例: TrainingRepository インタフェースは application に置き、実装は infrastructure/persistence

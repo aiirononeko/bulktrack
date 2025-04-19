@@ -1,0 +1,40 @@
+---
+description: フロントエンドの構造とCloudflare Workers
+globs: ["apps/web//.{ts,tsx,js,jsx}"]
+alwaysApply: false
+---
+
+# フロントエンド構造
+
+BulkTrackのフロントエンドはReact Router v7 (Framework Mode)をCloudflare Workers上でSSRしています。
+
+## フロントエンドの技術スタック
+
+- React Router v7 (Framework Mode)
+- Cloudflare Workers (SSR)
+- TypeScript
+
+## ディレクトリ構造
+
+```
+apps/
+└─ web/                  # フロントエンドアプリケーション
+    ├─ src/              # ソースコード
+    │   ├─ routes/       # React Router ルート定義
+    │   ├─ components/   # Reactコンポーネント
+    │   ├─ hooks/        # カスタムフック
+    │   └─ utils/        # ユーティリティ関数
+    ├─ public/           # 静的ファイル
+    └─ wrangler.toml     # Cloudflare Workers設定
+```
+
+## ローカル開発
+
+```
+pnpm --filter web dev   # wrangler dev --remote で HMR
+```
+
+```
+cd apps/web
+wrangler deploy
+```

@@ -1,0 +1,43 @@
+---
+description: BulkTrackのプロジェクト構造の概要
+globs: ["/.{ts,tsx,go}"]
+alwaysApply: true
+---
+
+# プロジェクト構造
+
+BulkTrackはTypeScriptとGoで構成されたフルスタック個人開発プロジェクトです。
+
+## モノレポ構造
+
+```
+/
+├─ apps/
+│   ├─ web/                  # React Router v7 + Workers
+│   │   ├─ src/
+│   │   ├─ public/
+│   │   └─ wrangler.toml
+│   └─ api/                  # Go + Fly.io
+│       ├─ cmd/server/       # main.go (エントリポイント)
+│       ├─ internal/         # ドメイン層・DB 層
+│       ├─ go.mod
+│       └─ Dockerfile
+├─ packages/                 # 共有ライブラリ
+│   ├─ ts-utils/             # TypeScript ヘルパー / API クライアント
+│   └─ go-shared/            # Go ドメインモデル / DTO
+├─ infra/                    # IaC (Terraform など)
+│   └─ cloudrun.tf
+├─ scripts/                  # Makefile / Taskfile / lint スクリプト
+├─ pnpm-workspace.yaml       # pnpm ワークスペース定義
+├─ go.work                   # Go ≥ 1.22 ワークスペース
+├─ fly.toml                  # Fly.io 設定ファイル
+└─ .github/workflows/        # CI/CD
+```
+
+## 技術スタック
+
+- フロントエンド: React Router v7 (Framework Mode) を
+- Cloudflare Workers 上で SSR
+- バックエンド: Go 1.24 製 REST API を Fly.io にデプロイ
+- データベース: Neon (PostgreSQL)
+- モノレポ管理: pnpm Workspaces と Go Workspace (go.work)
