@@ -13,22 +13,27 @@ import (
 
 type Querier interface {
 	CreateMenu(ctx context.Context, arg CreateMenuParams) (Menu, error)
+	CreateMenuItem(ctx context.Context, arg CreateMenuItemParams) (MenuItem, error)
 	CreateSet(ctx context.Context, arg CreateSetParams) (Set, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateWorkout(ctx context.Context, arg CreateWorkoutParams) (Workout, error)
 	DeleteMenu(ctx context.Context, id uuid.UUID) error
+	DeleteMenuItem(ctx context.Context, id uuid.UUID) error
 	DeleteSet(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeleteWorkout(ctx context.Context, id uuid.UUID) error
 	GetMenu(ctx context.Context, id uuid.UUID) (Menu, error)
+	GetMenuItem(ctx context.Context, id uuid.UUID) (MenuItem, error)
 	GetSet(ctx context.Context, id uuid.UUID) (Set, error)
 	GetUser(ctx context.Context, id uuid.UUID) (User, error)
 	GetWorkout(ctx context.Context, id uuid.UUID) (Workout, error)
+	ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]MenuItem, error)
 	ListMenusByUser(ctx context.Context, userID pgtype.UUID) ([]Menu, error)
 	ListSetsByWorkout(ctx context.Context, workoutID pgtype.UUID) ([]Set, error)
 	ListUsers(ctx context.Context) ([]User, error)
 	ListWorkoutsByUser(ctx context.Context, userID pgtype.UUID) ([]Workout, error)
 	UpdateMenu(ctx context.Context, arg UpdateMenuParams) (Menu, error)
+	UpdateMenuItem(ctx context.Context, arg UpdateMenuItemParams) (MenuItem, error)
 	UpdateSet(ctx context.Context, arg UpdateSetParams) (Set, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateWorkoutNote(ctx context.Context, arg UpdateWorkoutNoteParams) (Workout, error)
