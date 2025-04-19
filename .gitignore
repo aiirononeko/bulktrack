@@ -1,7 +1,15 @@
+# .env ファイル（機密情報を含む）
+.env
+.env.local
+.env.development
+.env.production
+
+# その他の一般的な除外ファイル
 .DS_Store
 node_modules/
+dist/
+*.log
 *.tsbuildinfo
-.env
 
 # React Router
 .react-router/
