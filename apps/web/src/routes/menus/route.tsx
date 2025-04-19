@@ -1,0 +1,61 @@
+import { Link, useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { MenuList } from "./components/menu-list";
+
+export function meta() {
+  return [
+    { title: "トレーニングメニュー - BulkTrack" },
+    { name: "description", content: "トレーニングメニューの管理" },
+  ];
+}
+
+interface Menu {
+  id: string;
+  name: string;
+  created_at: string;
+  items: {
+    id: string;
+    exercise: string;
+    set_order: number;
+    planned_reps: number;
+  }[];
+}
+
+export async function loader({ context }: LoaderFunctionArgs) {
+  try {
+    // APIリクエスト
+    const apiUrl = `${context.cloudflare.env.API_URL || "http://localhost:8080"}/menus`;
+    const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error("メニューの取得に失敗しました");
+    }
+    
+    const data = await response.json() as Menu[];
+    return { menus: data, error: null };
+  } catch (err) {
+    console.error("Error fetching menus:", err);
+    return { menus: [], error: "メニューの読み込み中にエラーが発生しました" };
+  }
+}
+
+export default function Menus() {
+  const { menus, error } = useLoaderData<{ menus: Menu[], error: string | null }>();
+  const loading = false;
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">トレーニングメニュー</h1>
+        <Link
+          to="/menus/new"
+          className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+        >
+          新規メニュー作成
+        </Link>
+      </div>
+
+      <MenuList menus={menus} loading={loading} error={error} />
+    </div>
+  );
+} 
