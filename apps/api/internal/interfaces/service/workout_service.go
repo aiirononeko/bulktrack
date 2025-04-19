@@ -151,18 +151,87 @@ func (s *WorkoutService) UpdateSet(ctx context.Context, setID uuid.UUID, req dto
 		return nil, err
 	}
 
-	// レスポンス作成
+	// レスポンス作成 - リクエスト値をそのまま返す
+	// DB内部の表現は複雑なのでフロントエンドに渡す値はリクエストとして受け取った明示的な値を使用
 	result := &dto.SetView{
 		ID:       updatedSet.ID,
 		Exercise: updatedSet.Exercise,
 		SetOrder: updatedSet.SetOrder,
-		WeightKg: req.WeightKg, // リクエストの値をそのまま返す
+		WeightKg: req.WeightKg,
 		Reps:     updatedSet.Reps,
 	}
 
 	if req.RPE > 0 {
-		result.RPE = req.RPE // リクエストの値をそのまま返す
+		result.RPE = req.RPE
 	}
 
 	return result, nil
+}
+
+// GetWorkoutWithSets はワークアウトとそのセットを取得する
+func (s *WorkoutService) GetWorkoutWithSets(ctx context.Context, workoutID uuid.UUID) (*dto.WorkoutResponse, error) {
+	// ワークアウト情報の取得
+	workout, err := s.queries.GetWorkout(ctx, workoutID)
+	if err != nil {
+		return nil, err
+	}
+
+	// メニュー情報の取得
+	menu, err := s.queries.GetMenu(ctx, workout.MenuID.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// セット情報の取得
+	pgWorkoutID := pgtype.UUID{Bytes: workoutID, Valid: true}
+	sets, err := s.queries.ListSetsByWorkout(ctx, pgWorkoutID)
+	if err != nil {
+		return nil, err
+	}
+
+	// セットをDTOに変換
+	setViews := make([]dto.SetView, 0, len(sets))
+	for _, set := range sets {
+		setView := dto.SetView{
+			ID:       set.ID,
+			Exercise: set.Exercise,
+			SetOrder: set.SetOrder,
+			Reps:     set.Reps,
+		}
+
+		// 重量のデコード（pgtype.Numericから浮動小数点数へ）
+		if set.WeightKg.Valid {
+			// NumericからFloatへの変換を試みる
+			weight, err := set.WeightKg.Float64Value()
+			if err == nil && weight.Valid {
+				setView.WeightKg = weight.Float64
+			}
+		}
+
+		// RPEのデコード（存在する場合）
+		if set.Rpe.Valid {
+			rpe, err := set.Rpe.Float64Value()
+			if err == nil && rpe.Valid {
+				setView.RPE = rpe.Float64
+			}
+		}
+
+		setViews = append(setViews, setView)
+	}
+
+	// ノートの変換
+	var noteStr string
+	if workout.Note.Valid {
+		noteStr = workout.Note.String
+	}
+
+	// レスポンス作成
+	return &dto.WorkoutResponse{
+		ID:        workout.ID,
+		MenuID:    workout.MenuID.Bytes,
+		MenuName:  menu.Name,
+		StartedAt: workout.StartedAt.Time.Format(time.RFC3339),
+		Note:      noteStr,
+		Sets:      setViews,
+	}, nil
 }

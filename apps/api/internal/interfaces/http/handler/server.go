@@ -45,6 +45,7 @@ func NewServer(container *di.Container) *Server {
 
 	// ワークアウト
 	s.mux.HandleFunc("POST /workouts", s.handleStartWorkout)
+	s.mux.HandleFunc("GET /workouts/{id}", s.handleGetWorkout)
 
 	// セット
 	s.mux.HandleFunc("PATCH /sets/{id}", s.handleUpdateSet)
@@ -195,6 +196,30 @@ func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
+}
+
+// ワークアウト詳細取得ハンドラー
+func (s *Server) handleGetWorkout(w http.ResponseWriter, r *http.Request) {
+	// ワークアウトIDの取得
+	idStr := strings.TrimPrefix(r.URL.Path, "/workouts/")
+	idStr = strings.TrimSuffix(idStr, "/")
+
+	workoutID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "Invalid workout ID", http.StatusBadRequest)
+		return
+	}
+
+	// ワークアウト取得
+	resp, err := s.workoutService.GetWorkoutWithSets(r.Context(), workoutID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get workout: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンス返却
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
 

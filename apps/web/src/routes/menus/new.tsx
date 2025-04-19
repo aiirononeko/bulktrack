@@ -1,6 +1,7 @@
-import { Form, useNavigate, useActionData, redirect } from "react-router";
+import { Form, useNavigate, useActionData, redirect, useNavigation } from "react-router";
 import { useState } from "react";
 import type { Route } from "../+types/menus";
+import type { ActionFunctionArgs } from "react-router";
 
 export function meta() {
   return [
@@ -16,20 +17,20 @@ type MenuItem = {
   plannedReps: number;
 };
 
-export async function action({ request, context }: Route.ActionArgs) {
+export async function action({ request, context }: ActionFunctionArgs) {
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
   const menuItems = JSON.parse(data.menuItems as string) as MenuItem[];
   
   // バリデーション
   if (!data.menuName || !(data.menuName as string).trim()) {
-    return { ok: false, error: "メニュー名を入力してください" };
+    return { success: false, error: "メニュー名を入力してください" };
   }
   
   // 空のエクササイズがないか確認
   const hasEmptyExercise = menuItems.some(item => !item.exercise.trim());
   if (hasEmptyExercise) {
-    return { ok: false, error: "すべてのエクササイズ名を入力してください" };
+    return { success: false, error: "すべてのエクササイズ名を入力してください" };
   }
   
   try {
@@ -59,19 +60,22 @@ export async function action({ request, context }: Route.ActionArgs) {
     return redirect("/menus");
   } catch (err) {
     console.error("Error creating menu:", err);
-    return { ok: false, error: "メニューの作成中にエラーが発生しました" };
+    return { success: false, error: "メニューの作成中にエラーが発生しました" };
   }
 }
 
 export default function NewMenu() {
   const navigate = useNavigate();
-  const actionData = useActionData() as { ok: boolean, error: string } | undefined;
+  const navigation = useNavigation();
+  const actionData = useActionData<{ success?: boolean, error?: string }>();
   const [menuName, setMenuName] = useState("");
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     { id: "1", exercise: "", setOrder: 1, plannedReps: 8 },
   ]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(actionData?.error || null);
+  
+  // フォームの送信状態を確認
+  const isSubmitting = navigation.state === "submitting";
+  const error = actionData?.error || null;
 
   // メニュー項目を追加
   const addMenuItem = () => {
@@ -124,7 +128,7 @@ export default function NewMenu() {
         </div>
       )}
 
-      <Form method="post" className="space-y-6" onSubmit={() => setLoading(true)}>
+      <Form method="post" className="space-y-6">
         <input type="hidden" name="menuItems" value={JSON.stringify(menuItems)} />
         
         <div>
@@ -212,16 +216,17 @@ export default function NewMenu() {
           <button
             type="button"
             onClick={() => navigate("/menus")}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
+            disabled={isSubmitting}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             キャンセル
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "作成中..." : "メニューを作成"}
+            {isSubmitting ? "作成中..." : "メニューを作成"}
           </button>
         </div>
       </Form>

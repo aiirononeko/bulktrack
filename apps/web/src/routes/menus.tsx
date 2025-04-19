@@ -1,5 +1,5 @@
 import { Link, useLoaderData } from "react-router";
-import type { Route } from "./+types/menus";
+import type { LoaderFunctionArgs } from "react-router";
 
 export function meta() {
   return [
@@ -20,11 +20,10 @@ interface Menu {
   }[];
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ context }: LoaderFunctionArgs) {
   try {
     // APIリクエスト
     const apiUrl = `${context.cloudflare.env.API_URL || "http://localhost:8080"}/menus`;
-    
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
@@ -77,7 +76,15 @@ export default function Menus() {
         <ul className="space-y-4 mt-4">
           {menus.map((menu: Menu) => (
             <li key={menu.id} className="border p-4 rounded-lg shadow-sm">
-              <h2 className="text-xl font-bold">{menu.name}</h2>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold">{menu.name}</h2>
+                <Link
+                  to={`/workouts/new?menuId=${menu.id}`}
+                  className="rounded-lg bg-green-600 px-3 py-1 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  トレーニング開始
+                </Link>
+              </div>
               <p className="text-gray-600">作成日: {new Date(menu.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' })}</p>
               <h3 className="font-medium mt-2">メニュー項目:</h3>
               <ul className="list-disc pl-5 mt-1">
