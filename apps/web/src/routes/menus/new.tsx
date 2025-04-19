@@ -1,5 +1,6 @@
-import { Form, useNavigate } from "react-router";
+import { Form, useNavigate, useActionData, redirect } from "react-router";
 import { useState } from "react";
+import type { Route } from "../+types/menus";
 
 export function meta() {
   return [
@@ -15,14 +16,62 @@ type MenuItem = {
   plannedReps: number;
 };
 
+export async function action({ request, context }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const data = Object.fromEntries(formData);
+  const menuItems = JSON.parse(data.menuItems as string) as MenuItem[];
+  
+  // バリデーション
+  if (!data.menuName || !(data.menuName as string).trim()) {
+    return { ok: false, error: "メニュー名を入力してください" };
+  }
+  
+  // 空のエクササイズがないか確認
+  const hasEmptyExercise = menuItems.some(item => !item.exercise.trim());
+  if (hasEmptyExercise) {
+    return { ok: false, error: "すべてのエクササイズ名を入力してください" };
+  }
+  
+  try {
+    // APIリクエスト
+    const apiUrl = `${context.cloudflare.env.API_URL || "http://localhost:8080"}/menus`;
+    
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: data.menuName,
+        items: menuItems.map(item => ({
+          exercise: item.exercise,
+          set_order: item.setOrder,
+          planned_reps: item.plannedReps,
+        })),
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error("メニューの作成に失敗しました");
+    }
+    
+    // 成功したらメニュー一覧ページに遷移
+    return redirect("/menus");
+  } catch (err) {
+    console.error("Error creating menu:", err);
+    return { ok: false, error: "メニューの作成中にエラーが発生しました" };
+  }
+}
+
 export default function NewMenu() {
   const navigate = useNavigate();
+  const actionData = useActionData() as { ok: boolean, error: string } | undefined;
   const [menuName, setMenuName] = useState("");
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     { id: "1", exercise: "", setOrder: 1, plannedReps: 8 },
   ]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(actionData?.error || null);
 
   // メニュー項目を追加
   const addMenuItem = () => {
@@ -63,55 +112,6 @@ export default function NewMenu() {
     );
   };
 
-  // フォーム送信処理
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!menuName.trim()) {
-      setError("メニュー名を入力してください");
-      return;
-    }
-    
-    // 空のエクササイズがないか確認
-    const hasEmptyExercise = menuItems.some(item => !item.exercise.trim());
-    if (hasEmptyExercise) {
-      setError("すべてのエクササイズ名を入力してください");
-      return;
-    }
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // API URLはCloudflare Workersの環境に合わせて調整
-      const response = await fetch("/api/menus", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: menuName,
-          items: menuItems.map(item => ({
-            exercise: item.exercise,
-            set_order: item.setOrder,
-            planned_reps: item.plannedReps,
-          })),
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error("メニューの作成に失敗しました");
-      }
-      
-      // 成功したらメニュー一覧ページに遷移
-      navigate("/menus");
-    } catch (err) {
-      console.error("Error creating menu:", err);
-      setError("メニューの作成中にエラーが発生しました");
-      setLoading(false);
-    }
-  };
-
   return (
     <div>
       <div className="mb-6">
@@ -124,13 +124,16 @@ export default function NewMenu() {
         </div>
       )}
 
-      <Form onSubmit={handleSubmit} className="space-y-6">
+      <Form method="post" className="space-y-6" onSubmit={() => setLoading(true)}>
+        <input type="hidden" name="menuItems" value={JSON.stringify(menuItems)} />
+        
         <div>
           <label htmlFor="menuName" className="block mb-1 font-medium">
             メニュー名
           </label>
           <input
             id="menuName"
+            name="menuName"
             value={menuName}
             onChange={e => setMenuName(e.target.value)}
             placeholder="Push Day, Pull Day, Legs Day など"
