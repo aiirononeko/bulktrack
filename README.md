@@ -4,11 +4,10 @@
 
 BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開発プロジェクトです。
 
-* **フロントエンド** – React Router v7 (Framework Mode) を **Cloudflare Workers** 上で SSR
-* **バックエンド** – Go 1.24 製 REST API を **Google Cloud Run** にデプロイ
-* **データベース** – **Cloud SQL (PostgreSQL)** を *Cloud SQL Go Connector* 経由で利用
-* **IaC** – Terraform (GCP) & Wrangler v3 (Cloudflare)
-* **モノレポ管理** – **pnpm Workspaces** と **Go Workspace (`go.work`)**
+* **フロントエンド** – React Router v7 (Framework Mode) を **Cloudflare Workers** 上で SSR
+* **バックエンド** – Go 1.24 製 REST API を **Fly.io** にデプロイ
+* **データベース** – **Neon (PostgreSQL)**
+* **モノレポ管理** – **pnpm Workspaces** と **Go Workspace (`go.work`)**
 
 ---
 
@@ -16,12 +15,12 @@ BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開�
 
 ```text
 ┌──────────────────────────┐          ┌───────────────────────────┐
-│  Cloudflare Workers      │  fetch   │  Cloud Run (Go API)       │
-│  └── React Router v7 SSR ├─────────►│  └── Cloud SQL Connector  │
+│  Cloudflare Workers      │  fetch   │  Fly.io (Go API)          │
+│  └── React Router v7 SSR ├─────────►│                           │
 └────────────┬─────────────┘          └────────────┬──────────────┘
-             │  static HTML / assets               │ IAM / Unix socket
+             │  static HTML / assets               │ 
              ▼                                     ▼
-      Cloudflare Pages ✧ CDN               Google Cloud SQL (PostgreSQL)
+      Cloudflare Pages ✧ CDN                 Neon (PostgreSQL)
 ```
 
 ---
@@ -31,11 +30,11 @@ BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開�
 ```text
 /
 ├─ apps/
-│   ├─ web/                  # React Router v7 + Workers
+│   ├─ web/                  # React Router v7 + Workers
 │   │   ├─ src/
 │   │   ├─ public/
 │   │   └─ wrangler.toml
-│   └─ api/                  # Go + Cloud Run
+│   └─ api/                  # Go + Fly.io
 │       ├─ cmd/server/       # main.go (エントリポイント)
 │       ├─ internal/         # ドメイン層・DB 層
 │       ├─ go.mod
@@ -48,6 +47,7 @@ BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開�
 ├─ scripts/                  # Makefile / Taskfile / lint スクリプト
 ├─ pnpm-workspace.yaml       # pnpm ワークスペース定義
 ├─ go.work                   # Go ≥ 1.22 ワークスペース
+├─ fly.toml                  # Fly.io 設定ファイル
 └─ .github/workflows/        # CI/CD
 ```
 
@@ -58,8 +58,8 @@ BulkTrack は **TypeScript + Go** で構成されたフルスタック個人開�
 * **Node.js** ≥ 20 + **pnpm** ≥ 9
 * **Go** ≥ 1.22
 * **Docker**
-* **gcloud CLI** (認証済み)
-* **wrangler CLI**
+* **flyctl CLI** (認証済み)
+* **wrangler CLI**
 
 ---
 
@@ -75,7 +75,7 @@ pnpm --filter web dev   # wrangler dev --remote で HMR
 
 ```bash
 cd apps/api
-# Auth Proxy 起動済み前提で…
+# 環境変数 DATABASE_URL が設定されていることを確認
 go run ./cmd/server
 ```
 
@@ -83,19 +83,25 @@ go run ./cmd/server
 
 ## 6. デプロイ手順
 
-### 6.1 API – Cloud Run
+### 6.1 API – Fly.io
 
 ```bash
+# プロジェクトルートから実行
+flyctl deploy
+
+# または、詳細設定する場合
 cd apps/api
-gcloud run deploy bulktrack-api \
-  --source . \
-  --region asia-northeast1 \
-  --set-env-vars DB_USER=postgres,DB_NAME=bulktrack \
-  --set-env-vars DB_CONNECTION_NAME=project:asia-northeast1:instance \
-  --allow-unauthenticated
+flyctl deploy --dockerfile ./Dockerfile
 ```
 
-### 6.2 フロントエンド – Cloudflare Workers
+### 6.2 環境変数の設定
+
+```bash
+# データベース接続情報を設定
+flyctl secrets set DATABASE_URL='postgres://user:password@host:port/dbname'
+```
+
+### 6.3 フロントエンド – Cloudflare Workers
 
 ```bash
 cd apps/web
@@ -108,10 +114,8 @@ wrangler deploy
 
 | 変数名 | 例 | 作用範囲 |
 |--------|----|-----------|
-| `DB_USER` | `postgres` | Cloud Run |
-| `DB_NAME` | `bulktrack` | Cloud Run |
-| `DB_CONNECTION_NAME` | `project:asia-northeast1:instance` | Cloud Run |
-| `PORT` | `8080` (Cloud Run が自動注入) | Cloud Run |
+| `DATABASE_URL` | `postgres://user:password@host:port/dbname` | Fly.io / ローカル開発 |
+| `PORT` | `8080` (Fly.io が自動注入) | Fly.io |
 
 ---
 
@@ -129,4 +133,10 @@ pnpm test -r
 # Lint
 go vet ./...
 pnpm -r lint
+
+# Fly.io へのデプロイ
+flyctl deploy
+
+# Fly.io ログの確認
+flyctl logs
 ```

@@ -14,22 +14,28 @@ type Pong struct {
 }
 
 func main() {
+	log.Printf("Starting server...")
+
 	dbPool, err := db.New()
 	if err != nil {
 		log.Fatalf("DB init: %v", err)
 	}
 	defer dbPool.Close()
 
+	log.Printf("Database connection established")
+
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		// DB がつながるかシンプルにチェック
 		if err := dbPool.PingContext(r.Context()); err != nil {
-			http.Error(w, "db unreachable", 503)
+			log.Printf("Database ping failed: %v", err)
+			http.Error(w, "db unreachable", http.StatusServiceUnavailable)
 			return
 		}
+		log.Printf("Database ping successful")
 		json.NewEncoder(w).Encode(Pong{Message: "pong"})
 	})
 
-	port := env("PORT", "8080") // Cloud Run は必ず $PORT を渡す
+	port := env("PORT", "8080")
 	log.Printf("listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

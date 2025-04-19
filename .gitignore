@@ -11,3 +11,8 @@ build/
 .mf
 .wrangler
 .dev.vars*
+
+# GCPサービスアカウントキー
+service-account-key.json
+*.json.key
+credentials.json
