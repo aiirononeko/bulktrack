@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  Link,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -42,7 +43,51 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="border-b border-gray-200 py-4">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold">BulkTrack</h1>
+            <nav>
+              <ul className="flex items-center space-x-6">
+                <li>
+                  <Link to="/" className="text-gray-600 hover:text-gray-900">
+                    ホーム
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/workouts" className="text-gray-600 hover:text-gray-900">
+                    トレーニング記録
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/volume-log" className="text-gray-600 hover:text-gray-900">
+                    ボリュームログ
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/menus" className="text-gray-600 hover:text-gray-900">
+                    メニュー
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </header>
+      <main className="flex-1 py-6">
+        <div className="container mx-auto px-4">
+          <Outlet />
+        </div>
+      </main>
+      <footer className="border-t border-gray-200 py-4">
+        <div className="container mx-auto px-4 text-center text-gray-500">
+          <p>&copy; 2025 BulkTrack</p>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
