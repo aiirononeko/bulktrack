@@ -1,6 +1,6 @@
 ---
 description: Goバックエンドのアーキテクチャと構造
-globs: ["apps/api//.go"]
+globs: *.go,*.sql
 alwaysApply: false
 ---
 

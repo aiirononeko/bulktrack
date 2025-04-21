@@ -1,6 +1,6 @@
 ---
 description: データベーススキーマとSQLCの使用方法
-globs: ["apps/api/internal/infrastructure/db//.sql"]
+globs: *.go,*.sql
 alwaysApply: false
 ---
 

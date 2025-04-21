@@ -1,6 +1,6 @@
 ---
 description: フロントエンドの構造とCloudflare Workers
-globs: ["apps/web//.{ts,tsx,js,jsx}"]
+globs: *.tsx,*.ts
 alwaysApply: false
 ---
 
@@ -27,6 +27,78 @@ apps/
     ├─ public/           # 静的ファイル
     └─ wrangler.toml     # Cloudflare Workers設定
 ```
+
+## React Router v7のファイル構造と作法
+
+### ルートモジュール分割パターン
+
+React Router v7では、関心の分離に基づいて以下のようにファイルを分割することを推奨します
+
+```
+/src
+  /routes
+    /$routeName
+      /route.tsx       # メインのルートコンポーネント
+      /loader.ts       # データ取得ロジック
+      /action.ts       # データ変更ロジック
+      /$subRoute/      # ネストされたルート
+      /components/     # このルート専用のコンポーネント
+      /type.ts         # 型定義
+```
+
+### 各ファイルの役割
+
+- **route.tsx**: UIのみに集中し、データ操作ロジックは含めない
+  ```tsx
+  export { loader } from "./loader";
+  export { action } from "./action";
+  
+  export default function RouteComponent() {
+    return <YourComponent />;
+  }
+  ```
+
+- **loader.ts**: データ取得ロジックを含む
+  ```ts
+  export async function loader({ context, params }) {
+    const env = context.cloudflare.env;
+    const baseUrl = env?.API_URL || "http://localhost:8080";
+    // APIからデータを取得
+    return { data };
+  }
+  ```
+
+- **action.ts**: データ変更ロジックを含む
+  ```ts
+  export async function action({ request, params, context }) {
+    const formData = await request.formData();
+    // APIにデータを送信
+    return redirect("/success");
+  }
+  ```
+
+### データフローパターン
+
+- **データ取得**: `useLoaderData` フックを使用
+  ```tsx
+  const { data } = useLoaderData();
+  ```
+
+- **フォーム送信**: 宣言的には `Form` コンポーネント、命令的には `useSubmit` フックを使用
+  ```tsx
+  // 宣言的
+  <Form method="post">...</Form>
+  
+  // 命令的
+  const submit = useSubmit();
+  submit(formData, { method: "post" });
+  ```
+
+- **API連携**: Cloudflare環境変数を活用
+  ```ts
+  const env = context.cloudflare.env;
+  const baseUrl = env?.API_URL || "http://localhost:8080";
+  ```
 
 ## ローカル開発
 
