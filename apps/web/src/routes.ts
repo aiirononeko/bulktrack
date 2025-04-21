@@ -8,5 +8,6 @@ export default [
     index("routes/workouts/_index/route.tsx"),
     route("new", "routes/workouts/new/route.tsx"),
     route(":id", "routes/workouts/$id/route.tsx"),
+    route("new/:menuId", "routes/workouts/new/$menuId/route.tsx"),
   ]),
 ] satisfies RouteConfig;

@@ -1,45 +1,37 @@
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { MenuSelector } from "./components/menu-selector";
-import { WorkoutForm } from "./components/workout-form";
-import { menuesLoader } from "./loader";
 import type { SelectableMenu } from "./type";
 
-export { menuesLoader as loader };
-
-// フォーム送信アクション
-export async function action({ request }: { request: Request }) {
-  const formData = await request.formData();
-
-  // ここでデータを処理、保存
-  console.log("新規ワークアウトデータ:", Object.fromEntries(formData));
-
-  // 保存後は一覧ページにリダイレクト
-  return redirect("/workouts");
+// ローダーをこのファイル内に定義
+export async function loader() {
+  // menuId は不要になったので削除
+  console.log("Loader (route.tsx): Fetching menu list.");
+  // モックデータやAPIからメニュー一覧を取得
+  const mockMenus: SelectableMenu[] = [
+    { id: "menu-1", name: "胸と三頭筋の日", description: "ベンチプレス中心のプッシュ系メニュー" },
+    { id: "menu-2", name: "背中と二頭筋の日", description: "デッドリフトとプル系種目" },
+    { id: "menu-3", name: "脚の日", description: "スクワットとレッグプレスメイン" },
+    { id: "menu-free", name: "フリーワークアウト", description: "メニューを使わずに開始" },
+  ];
+  return { menus: mockMenus }; // menus のみを返す
 }
 
-export default function NewWorkout() {
-  const { menus, selectedMenuId, exercises } = useLoaderData() as {
-    menus: SelectableMenu[] | null;
-    selectedMenuId: string | null;
-    exercises?: any[]; // TODO: exercisesの型を定義
-  };
+// アクションは記録画面に移動させるので削除 (必要なら後で $menuId.tsx に追加)
+// export async function action({ request }: { request: Request }) { ... }
 
+export default function NewWorkoutSelectMenu() {
+  // コンポーネント名を変更
+  const { menus } = useLoaderData() as { menus: SelectableMenu[] };
+
+  // 条件分岐は不要になり、常にMenuSelectorを表示
+  console.log("Route (route.tsx): Rendering MenuSelector with menus:", menus);
   return (
     <div>
-      {!selectedMenuId ? (
-        <>
-          <h1 className="text-2xl font-bold mb-6">トレーニングメニュー選択</h1>
-          <p className="text-sm text-muted-foreground mb-4">
-            開始するトレーニングメニューを選択してください。
-          </p>
-          <MenuSelector menus={menus || []} />
-        </>
-      ) : (
-        <>
-          <h1 className="text-2xl font-bold mb-6">新規ワークアウト</h1>
-          <WorkoutForm />
-        </>
-      )}
+      <h1 className="text-2xl font-bold mb-6">トレーニングメニュー選択</h1>
+      <p className="text-sm text-muted-foreground mb-4">
+        開始するトレーニングメニューを選択してください。
+      </p>
+      <MenuSelector menus={menus} />
     </div>
   );
 }

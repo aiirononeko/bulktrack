@@ -1,9 +1,9 @@
 import { Link } from "react-router";
 import type { SelectableMenu } from "../type";
 
-type MenuSelectorProps = {
+interface MenuSelectorProps {
   menus: SelectableMenu[];
-};
+}
 
 export function MenuSelector({ menus }: MenuSelectorProps) {
   if (!menus || menus.length === 0) {
@@ -21,20 +21,15 @@ export function MenuSelector({ menus }: MenuSelectorProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {menus.map((menu) => (
         <Link
           key={menu.id}
-          // 選択したメニューIDをクエリパラメータとして付与
-          to={`/workouts/new?menuId=${menu.id}`}
-          className="block rounded-lg border bg-card text-card-foreground shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          to={`/workouts/new/${menu.id}`}
+          className="block p-6 bg-card rounded-lg border hover:shadow-md transition-shadow duration-200"
         >
-          <div className="p-4">
-            <h3 className="text-base font-semibold mb-1">{menu.name}</h3>
-            {menu.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2">{menu.description}</p>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold mb-2">{menu.name}</h3>
+          <p className="text-sm text-muted-foreground">{menu.description || "説明がありません"}</p>
         </Link>
       ))}
     </div>
