@@ -1,4 +1,4 @@
-import type { WeeklyVolume } from "./type";
+import type { WeeklyVolume } from "./types";
 
 export async function weeklyVolumeLoader() {
   const mockWeeklyVolumes: WeeklyVolume[] = [

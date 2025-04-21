@@ -18,6 +18,15 @@ type WorkoutResponse struct {
 	Sets      []SetView `json:"sets"`
 }
 
+// WorkoutSummary はワークアウト一覧表示用の概要情報を表す
+type WorkoutSummary struct {
+	ID        uuid.UUID `json:"id"`
+	MenuID    uuid.UUID `json:"menu_id"`
+	MenuName  string    `json:"menu_name"`
+	StartedAt string    `json:"started_at"`
+	Note      string    `json:"note,omitempty"`
+}
+
 // SetView はセットの表示を表す
 type SetView struct {
 	ID       uuid.UUID `json:"id"`

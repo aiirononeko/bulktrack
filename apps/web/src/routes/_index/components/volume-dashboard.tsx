@@ -1,4 +1,4 @@
-import type { WeeklyVolume } from "../type";
+import type { WeeklyVolume } from "../types";
 
 type VolumeDashboardProps = {
   weeklyVolumes: WeeklyVolume[];

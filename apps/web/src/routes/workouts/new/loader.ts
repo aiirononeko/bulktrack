@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 
-import type { SelectableMenu } from "./type";
+import type { SelectableMenu } from "./types";
 
 export async function loader({ context }: LoaderFunctionArgs) {
   console.log("Loader (route.tsx): Fetching menu list from API...");

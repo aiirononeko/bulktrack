@@ -1,7 +1,7 @@
 import { useLoaderData } from "react-router";
 
 import { MenuSelector } from "./components/menu-selector";
-import type { SelectableMenu } from "./type";
+import type { SelectableMenu } from "./types";
 
 export { loader } from "./loader";
 

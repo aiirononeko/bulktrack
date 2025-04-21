@@ -1,6 +1,6 @@
 import { useLoaderData } from "react-router";
 import { WorkoutForm } from "../components/workout-form";
-import type { MenuExerciseTemplate } from "../type";
+import type { MenuExerciseTemplate } from "../types";
 
 import { action } from "./action";
 import { loader } from "./loader";

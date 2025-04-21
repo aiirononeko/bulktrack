@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { SelectableMenu } from "../type";
+import type { SelectableMenu } from "../types";
 
 interface MenuSelectorProps {
   menus: SelectableMenu[];

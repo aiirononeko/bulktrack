@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
-import type { MenuExerciseTemplate } from "../type";
+import type { MenuExerciseTemplate } from "../types";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const menuId = params.menuId;

@@ -47,6 +47,7 @@ func NewServer(container *di.Container) *Server {
 	s.mux.HandleFunc("DELETE /menus/{id}", s.handleDeleteMenu)
 
 	// ワークアウト
+	s.mux.HandleFunc("GET /workouts", s.handleListWorkouts)
 	s.mux.HandleFunc("POST /workouts", s.handleStartWorkout)
 	s.mux.HandleFunc("GET /workouts/{id}", s.handleGetWorkout)
 
@@ -171,6 +172,23 @@ func (s *Server) handleListMenus(w http.ResponseWriter, r *http.Request) {
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(menus)
+}
+
+// ワークアウト一覧取得ハンドラー
+func (s *Server) handleListWorkouts(w http.ResponseWriter, r *http.Request) {
+	// ユーザーID取得 (認証は実装予定)
+	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
+
+	// ワークアウト一覧取得
+	workouts, err := s.workoutService.ListWorkoutsByUser(r.Context(), userID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list workouts: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンス返却
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(workouts)
 }
 
 // ワークアウト開始ハンドラー

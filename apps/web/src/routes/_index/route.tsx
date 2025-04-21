@@ -2,7 +2,7 @@ import { Link, useLoaderData } from "react-router";
 
 import { VolumeDashboard } from "./components/volume-dashboard";
 import { weeklyVolumeLoader } from "./loader";
-import type { WeeklyVolume } from "./type";
+import type { WeeklyVolume } from "./types";
 
 export { weeklyVolumeLoader as loader };
 

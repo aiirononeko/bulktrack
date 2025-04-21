@@ -1,7 +1,8 @@
 import { Field } from "@base-ui-components/react/field";
 import { Form } from "@base-ui-components/react/form";
 import { useEffect, useState } from "react";
-import type { MenuExerciseTemplate } from "../type";
+import { useActionData, useSubmit } from "react-router";
+import type { MenuExerciseTemplate } from "../types";
 
 // WorkoutFormのpropsの型を定義
 interface WorkoutFormProps {
@@ -32,6 +33,12 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   // base-ui の Form でエラーを管理する場合に使用
   const [errors, setErrors] = useState({}); // エラー状態を追加
+
+  // Action Dataを取得（エラーや成功メッセージを表示するために使用可能）
+  const actionData = useActionData() as { error?: string } | undefined;
+
+  // useSubmitフックを取得
+  const submit = useSubmit();
 
   // initialExercises が変更されたら exerciseLogs を初期化する
   useEffect(() => {
@@ -72,35 +79,43 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
     const updatedLogs = [...exerciseLogs];
     updatedLogs[exerciseLogIndex].sets[setIndex][field] = value;
     setExerciseLogs(updatedLogs);
-    // 入力時にエラーをクリアする（必要に応じて）
-    // onClearErrors を Form に渡す場合は不要
-    // setErrors(prev => ({ ...prev, [`exercises[${exerciseLogIndex}].sets[${setIndex}].${field}`]: undefined }));
   };
 
-  // TODO: フォーム送信処理
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  // フォーム送信時のハンドラ
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // TODO: バリデーション (例: zod)
-    // const formData = new FormData(event.currentTarget);
-    // const result = schema.safeParse(Object.fromEntries(formData as any));
-    // if (!result.success) {
-    //   setErrors(result.error.flatten().fieldErrors);
-    //   return;
-    // }
-    console.log("Submitting workout log:", exerciseLogs);
-    // ここでAPIにデータを送信する
-  };
 
-  // initialExercises をもとに初期ログ状態を生成するロジックは useEffect で実装
+    // FormDataオブジェクトに値を設定
+    const formData = new FormData();
+
+    // ワークアウトデータをJSON形式でFormDataに追加
+    formData.append(
+      "workout",
+      JSON.stringify({
+        menuId,
+        exercises: exerciseLogs,
+      })
+    );
+
+    // useSubmitを使用してフォームデータを送信
+    submit(formData, { method: "post" });
+  };
 
   return (
-    // base-ui の Form コンポーネントを使用
     <Form
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
       className="space-y-6"
-      errors={errors} // エラー状態を渡す
-      onClearErrors={setErrors} // エラークリア関数を渡す
+      errors={errors}
+      onClearErrors={setErrors}
     >
+      {actionData?.error && (
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+          role="alert"
+        >
+          <span className="block sm:inline">{actionData.error}</span>
+        </div>
+      )}
       {exerciseLogs.map((log, exerciseIndex) => (
         // Card を div と Tailwind クラスに置き換え
         <div key={log.exerciseId} className="border rounded-lg p-4 shadow-sm mb-4">

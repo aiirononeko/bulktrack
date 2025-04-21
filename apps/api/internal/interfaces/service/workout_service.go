@@ -27,6 +27,61 @@ func NewWorkoutService(pool *pgxpool.Pool) *WorkoutService {
 	}
 }
 
+// ListWorkoutsByUser はユーザーのワークアウト一覧を取得する
+func (s *WorkoutService) ListWorkoutsByUser(ctx context.Context, userID uuid.UUID) ([]dto.WorkoutSummary, error) {
+	// ユーザーIDをpgtypeに変換
+	pgUserID := pgtype.UUID{Bytes: userID, Valid: true}
+
+	// ワークアウト一覧の取得
+	workouts, err := s.queries.ListWorkoutsByUser(ctx, pgUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// メニュー情報をキャッシュするためのマップ
+	menuCache := make(map[uuid.UUID]string)
+
+	// ワークアウト一覧をDTOに変換
+	summaries := make([]dto.WorkoutSummary, 0, len(workouts))
+	for _, workout := range workouts {
+		var menuName string
+		menuID := workout.MenuID.Bytes
+
+		// メニュー名をキャッシュから取得するか、DBから取得してキャッシュする
+		if name, ok := menuCache[menuID]; ok {
+			menuName = name
+		} else {
+			menu, err := s.queries.GetMenu(ctx, menuID)
+			if err != nil {
+				// メニューが見つからない場合はスキップせず、「不明なメニュー」として扱う
+				menuName = "不明なメニュー"
+			} else {
+				menuName = menu.Name
+				menuCache[menuID] = menuName
+			}
+		}
+
+		// ノートの変換
+		var noteStr string
+		if workout.Note.Valid {
+			noteStr = workout.Note.String
+		}
+
+		// サマリの作成
+		summary := dto.WorkoutSummary{
+			ID:        workout.ID,
+			MenuID:    menuID,
+			MenuName:  menuName,
+			StartedAt: workout.StartedAt.Time.Format(time.RFC3339),
+			Note:      noteStr,
+		}
+
+		summaries = append(summaries, summary)
+	}
+
+	return summaries, nil
+}
+
 // StartWorkout は新しいワークアウトを開始する
 func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkoutRequest, userID uuid.UUID) (*dto.WorkoutResponse, error) {
 	// トランザクション開始
