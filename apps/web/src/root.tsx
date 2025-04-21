@@ -49,30 +49,6 @@ export default function App() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">BulkTrack</h1>
-            <nav>
-              <ul className="flex items-center space-x-6">
-                <li>
-                  <Link to="/" className="text-gray-600 hover:text-gray-900">
-                    ホーム
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/workouts" className="text-gray-600 hover:text-gray-900">
-                    トレーニング記録
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/volume-log" className="text-gray-600 hover:text-gray-900">
-                    ボリュームログ
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/menus" className="text-gray-600 hover:text-gray-900">
-                    メニュー
-                  </Link>
-                </li>
-              </ul>
-            </nav>
           </div>
         </div>
       </header>
