@@ -1,16 +1,15 @@
 import { redirect } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
-import type { MenuExerciseTemplate } from "../types";
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  const menuId = params.menuId;
+import type { MenuExerciseTemplate } from "../types";
+import type { Route } from "./+types/route";
+
+export async function loader(args: Route.LoaderArgs) {
+  const menuId = args.params.menuId;
 
   if (!menuId) {
     console.error("Loader ($menuId/loader.ts): menuId not found in params");
     return redirect("/workouts/new");
   }
-
-  console.log("Loader ($menuId/loader.ts): Found menuId:", menuId, ", returning exercises.");
 
   if (menuId === "menu-free") {
     console.log("Loader ($menuId/loader.ts): Free workout selected, returning empty exercises.");

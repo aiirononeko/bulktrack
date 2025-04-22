@@ -1,20 +1,27 @@
-import type { LoaderFunctionArgs } from "react-router";
-import type { MenuApiResponse } from "../../_index/type"; // 一覧画面の型定義を流用
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { redirect } from "react-router";
 
-// TODO: APIから特定のメニューデータを取得する処理を実装する
-export async function loader({ params, context }: LoaderFunctionArgs) {
-  const menuId = params.menuId;
+import { apiFetch } from "~/lib/api-client";
+import type { MenuApiResponse } from "../../_index/type";
+import type { Route } from "./+types/route";
+
+export async function loader(args: Route.LoaderArgs) {
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return redirect(`/signin?redirect_url=${args.request.url}`);
+  }
+
+  const menuId = args.params.menuId;
   if (!menuId) {
     throw new Response("Menu ID is required", { status: 400 });
   }
 
-  console.log(`Fetching menu data for ID: ${menuId}`);
-  const env = context.cloudflare.env;
+  const env = args.context.cloudflare.env;
   const baseUrl = env?.API_URL || "http://localhost:5555";
   const apiUrl = `${baseUrl}/menus/${menuId}`;
 
   try {
-    const response = await fetch(apiUrl);
+    const response = await apiFetch(args, apiUrl);
     if (!response.ok) {
       if (response.status === 404) {
         throw new Response("Menu not found", { status: 404 });

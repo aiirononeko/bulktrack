@@ -1,9 +1,9 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
 
+import { apiFetch } from "~/lib/api-client";
 import type { Route } from "./+types/route";
 
-// 送信するメニュー項目の型 (バックエンドの MenuItemInput に合わせる)
 interface MenuItemToSend {
   exercise_id: string;
   set_order: number;
@@ -13,20 +13,14 @@ interface MenuItemToSend {
 }
 
 export async function action(args: Route.ActionArgs) {
-  const { userId, getToken } = await getAuth(args);
+  const { userId } = await getAuth(args);
   if (!userId) {
     return redirect(`/signin?redirect_url=${args.request.url}`);
   }
 
-  const token = await getToken();
-
-  const env = args.context.cloudflare.env;
-  const baseUrl = env?.API_URL || "http://localhost:5555";
-  const apiUrl = `${baseUrl}/menus`;
-
   const formData = await args.request.formData();
   const menuName = formData.get("name") as string;
-  const descriptionRaw = formData.get("description"); // まずそのまま取得
+  const descriptionRaw = formData.get("description");
   const itemsJson = formData.get("items") as string | null;
 
   if (!menuName) {
@@ -56,15 +50,12 @@ export async function action(args: Route.ActionArgs) {
       ? descriptionRaw.trim()
       : null;
 
-  console.log("Creating menu object:", { name: menuName, description, items }); // 送信するデータを確認
-
   try {
     const payload = { name: menuName, description, items }; // description をペイロードに含める
     const bodyString = JSON.stringify(payload); // 文字列化
 
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(args, "/menus", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: bodyString, // 文字列化した body を使用
     });
 

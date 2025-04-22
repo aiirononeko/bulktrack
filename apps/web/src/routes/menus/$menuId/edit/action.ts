@@ -1,31 +1,30 @@
-import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 
-export async function action({ request, params, context }: ActionFunctionArgs) {
-  const menuId = params.menuId;
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { apiFetch } from "~/lib/api-client";
+import type { Route } from "./+types/route";
+
+export async function action(args: Route.ActionArgs) {
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return redirect(`/signin?redirect_url=${args.request.url}`);
+  }
+
+  const menuId = args.params.menuId;
   if (!menuId) {
     return { error: "メニューIDが指定されていません。" };
   }
 
-  const formData = await request.formData();
-  const updatedName = formData.get("name") as string; // フォームから名前を取得
+  const formData = await args.request.formData();
+  const updatedName = formData.get("name") as string;
 
   if (!updatedName) {
     return { error: "メニュー名は必須です。" };
   }
 
-  console.log(`Updating menu ${menuId} with name:`, updatedName);
-
-  const env = context.cloudflare.env;
-  const baseUrl = env?.API_URL || "http://localhost:5555";
-  // TODO: バックエンドのAPI設計に合わせて PATCH /menus/{id} または PUT /menus/{id} を使用
-  const apiUrl = `${baseUrl}/menus/${menuId}`;
-
   try {
-    const response = await fetch(apiUrl, {
-      method: "PATCH", // APIがPATCHをサポートしていると仮定
-      headers: { "Content-Type": "application/json" },
-      // TODO: メニュー項目も更新する場合は body を修正
+    const response = await apiFetch(args, `/menus/${menuId}`, {
+      method: "PATCH",
       body: JSON.stringify({ name: updatedName }),
     });
 

@@ -1,28 +1,18 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
 
+import { apiFetch } from "~/lib/api-client";
 import type { Route } from "./+types/route";
 import type { SelectableMenu } from "./types";
 
 export async function loader(args: Route.LoaderArgs) {
   try {
-    const { userId, getToken } = await getAuth(args);
+    const { userId } = await getAuth(args);
     if (!userId) {
       return redirect(`/signin?redirect_url=${args.request.url}`);
     }
 
-    const env = args.context.cloudflare.env;
-    const baseUrl = env?.API_URL || "http://localhost:5555";
-    const apiUrl = `${baseUrl}/menus`;
-    const token = await getToken();
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const response = await apiFetch(args, "/menus");
     if (!response.ok) {
       // APIエラーハンドリング
       console.error(`API error: ${response.status} ${response.statusText}`);

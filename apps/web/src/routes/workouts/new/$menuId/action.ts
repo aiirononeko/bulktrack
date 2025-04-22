@@ -1,9 +1,11 @@
 import { redirect } from "react-router";
-import type { ActionFunctionArgs } from "react-router";
 
-export async function action({ request, params, context }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const menuId = params.menuId;
+import { apiFetch } from "~/lib/api-client";
+import type { Route } from "./+types/route";
+
+export async function action(args: Route.ActionArgs) {
+  const formData = await args.request.formData();
+  const menuId = args.params.menuId;
 
   // FormDataからワークアウトデータを取得
   const workoutDataJson = formData.get("workout");
@@ -15,21 +17,10 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
 
   try {
     const workoutData = JSON.parse(workoutDataJson);
-    console.log(`Saving workout data for menuId: ${menuId}`, workoutData);
-
-    // Cloudflare環境変数からAPIのURLを取得
-    const env = context.cloudflare.env;
-    const baseUrl = env?.API_URL || "http://localhost:5555";
-    const apiUrl = `${baseUrl}/workouts`;
-
-    console.log(`Using API URL: ${apiUrl}`);
 
     // APIエンドポイントにPOSTリクエストを送信
-    const response = await fetch(apiUrl, {
+    const response = await apiFetch(args, "/workouts", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         menu_id: menuId, // APIの期待するキー名に合わせる
         exercises: workoutData.exercises.map(

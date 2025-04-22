@@ -1,5 +1,6 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
+import { apiFetch } from "~/lib/api-client";
 import type { Route } from "./+types/route";
 
 interface Exercise {
@@ -8,24 +9,13 @@ interface Exercise {
 }
 
 export async function loader(args: Route.LoaderArgs) {
-  const env = args.context.cloudflare.env;
-  const baseUrl = env?.API_URL || "http://localhost:5555";
-  const apiUrl = `${baseUrl}/exercises`; // 種目リスト取得 API エンドポイント (仮定)
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return redirect(`/signin?redirect_url=${args.request.url}`);
+  }
 
   try {
-    const { userId, getToken } = await getAuth(args);
-    if (!userId) {
-      return redirect(`/signin?redirect_url=${args.request.url}`);
-    }
-
-    const token = await getToken();
-
-    const response = await fetch(apiUrl, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiFetch(args, "/exercises");
 
     if (!response.ok) {
       // API エラーの場合は空のリストを返すか、エラーを投げる
