@@ -1,16 +1,27 @@
-import type { LoaderFunctionArgs } from "react-router";
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { redirect } from "react-router";
 
+import type { Route } from "./+types/route";
 import type { SelectableMenu } from "./types";
 
-export async function loader({ context }: LoaderFunctionArgs) {
-  console.log("Loader (route.tsx): Fetching menu list from API...");
+export async function loader(args: Route.LoaderArgs) {
   try {
-    const env = context.cloudflare.env;
+    const { userId, getToken } = await getAuth(args);
+    if (!userId) {
+      return redirect(`/signin?redirect_url=${args.request.url}`);
+    }
+
+    const env = args.context.cloudflare.env;
     const baseUrl = env?.API_URL || "http://localhost:5555";
     const apiUrl = `${baseUrl}/menus`;
-    console.log(`Loader (route.tsx): Using API URL: ${apiUrl}`); // 使用するURLをログ出力
+    const token = await getToken();
 
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     if (!response.ok) {
       // APIエラーハンドリング
@@ -29,7 +40,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
     // JSONレスポンスをパース
     const menus = (await response.json()) as SelectableMenu[]; // 型アサーション
-    console.log("Loader (route.tsx): Successfully fetched menus:", menus);
 
     return { menus }; // APIから取得した menus を返す
   } catch (error) {

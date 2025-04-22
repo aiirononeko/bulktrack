@@ -25,7 +25,7 @@ type CreateExerciseParams struct {
 	Name                    string      `json:"name"`
 	MainTargetMuscleGroupID pgtype.UUID `json:"main_target_muscle_group_id"`
 	IsCustom                pgtype.Bool `json:"is_custom"`
-	CreatedByUserID         pgtype.UUID `json:"created_by_user_id"`
+	CreatedByUserID         pgtype.Text `json:"created_by_user_id"`
 }
 
 func (q *Queries) CreateExercise(ctx context.Context, arg CreateExerciseParams) (Exercise, error) {

@@ -1,19 +1,31 @@
-import type { LoaderFunctionArgs } from "react-router";
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { redirect } from "react-router";
+import type { Route } from "./+types/route";
 
-// APIから取得する Exercise の型
 interface Exercise {
   id: string;
   name: string;
 }
 
-// Loader 関数
-export async function loader({ context }: LoaderFunctionArgs) {
-  const env = context.cloudflare.env;
+export async function loader(args: Route.LoaderArgs) {
+  const env = args.context.cloudflare.env;
   const baseUrl = env?.API_URL || "http://localhost:5555";
   const apiUrl = `${baseUrl}/exercises`; // 種目リスト取得 API エンドポイント (仮定)
 
   try {
-    const response = await fetch(apiUrl);
+    const { userId, getToken } = await getAuth(args);
+    if (!userId) {
+      return redirect(`/signin?redirect_url=${args.request.url}`);
+    }
+
+    const token = await getToken();
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     if (!response.ok) {
       // API エラーの場合は空のリストを返すか、エラーを投げる

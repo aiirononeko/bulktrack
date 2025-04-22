@@ -29,38 +29,35 @@ func NewMenuService(pool *pgxpool.Pool, logger *slog.Logger) *MenuService {
 }
 
 // CreateMenu は新しいメニューを作成する
-func (s *MenuService) CreateMenu(ctx context.Context, req dto.CreateMenuRequest, userID uuid.UUID) (*dto.MenuResponse, error) {
+func (s *MenuService) CreateMenu(ctx context.Context, req dto.CreateMenuRequest, userID string) (*dto.MenuResponse, error) {
 	// トランザクション開始
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to begin transaction for CreateMenu", slog.Any("error", err), slog.String("user_id", userID.String()))
+		s.logger.ErrorContext(ctx, "Failed to begin transaction for CreateMenu", slog.Any("error", err), slog.String("user_id", userID))
 		return nil, err
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			s.logger.ErrorContext(ctx, "Recovered in CreateMenu, rolling back transaction", slog.Any("panic_value", r), slog.String("user_id", userID.String()))
+			s.logger.ErrorContext(ctx, "Recovered in CreateMenu, rolling back transaction", slog.Any("panic_value", r), slog.String("user_id", userID))
 			tx.Rollback(ctx)
 			panic(r)
 		} else if err != nil {
 			rollErr := tx.Rollback(ctx)
 			if rollErr != nil {
-				s.logger.ErrorContext(ctx, "Failed to rollback transaction for CreateMenu", slog.Any("rollback_error", rollErr), slog.Any("original_error", err), slog.String("user_id", userID.String()))
+				s.logger.ErrorContext(ctx, "Failed to rollback transaction for CreateMenu", slog.Any("rollback_error", rollErr), slog.Any("original_error", err), slog.String("user_id", userID))
 			}
 		}
 	}()
 
 	qtx := sqlc.New(tx)
 
-	// UUIDをpgtypeに変換
-	pgUserID := pgtype.UUID{Bytes: userID, Valid: true}
-
 	// メニュー作成
 	menu, err := qtx.CreateMenu(ctx, sqlc.CreateMenuParams{
-		UserID: pgUserID,
+		UserID: userID,
 		Name:   req.Name,
 	})
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute CreateMenu query", slog.Any("error", err), slog.String("user_id", userID.String()), slog.String("menu_name", req.Name))
+		s.logger.ErrorContext(ctx, "Failed to execute CreateMenu query", slog.Any("error", err), slog.String("user_id", userID), slog.String("menu_name", req.Name))
 		return nil, err
 	}
 
@@ -132,7 +129,7 @@ func (s *MenuService) CreateMenu(ctx context.Context, req dto.CreateMenuRequest,
 
 	// トランザクションコミット
 	if err = tx.Commit(ctx); err != nil {
-		s.logger.ErrorContext(ctx, "Failed to commit transaction for CreateMenu", slog.Any("error", err), slog.String("user_id", userID.String()), slog.String("menu_id", menu.ID.String()))
+		s.logger.ErrorContext(ctx, "Failed to commit transaction for CreateMenu", slog.Any("error", err), slog.String("user_id", userID), slog.String("menu_id", menu.ID.String()))
 		return nil, err
 	}
 
@@ -243,14 +240,11 @@ func (s *MenuService) DeleteMenu(ctx context.Context, menuID uuid.UUID) (err err
 }
 
 // ListMenusByUser はユーザーに紐づくメニュー一覧を取得する
-func (s *MenuService) ListMenusByUser(ctx context.Context, userID uuid.UUID) ([]dto.MenuResponse, error) {
-	// ユーザーIDをpgtype.UUIDに変換
-	pgUserID := pgtype.UUID{Bytes: userID, Valid: true}
-
+func (s *MenuService) ListMenusByUser(ctx context.Context, userID string) ([]dto.MenuResponse, error) {
 	// メニュー一覧の取得
-	menus, err := s.queries.ListMenusByUser(ctx, pgUserID)
+	menus, err := s.queries.ListMenusByUser(ctx, userID)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute ListMenusByUser query", slog.Any("error", err), slog.String("user_id", userID.String()))
+		s.logger.ErrorContext(ctx, "Failed to execute ListMenusByUser query", slog.Any("error", err), slog.String("user_id", userID))
 		return nil, err
 	}
 
@@ -263,7 +257,7 @@ func (s *MenuService) ListMenusByUser(ctx context.Context, userID uuid.UUID) ([]
 		// メニュー項目の取得
 		menuItems, err := s.queries.ListMenuItemsByMenu(ctx, pgMenuID)
 		if err != nil {
-			s.logger.ErrorContext(ctx, "Failed to execute ListMenuItemsByMenu query for a menu in ListMenusByUser", slog.Any("error", err), slog.String("menu_id", menu.ID.String()), slog.String("user_id", userID.String()))
+			s.logger.ErrorContext(ctx, "Failed to execute ListMenuItemsByMenu query for a menu in ListMenusByUser", slog.Any("error", err), slog.String("menu_id", menu.ID.String()), slog.String("user_id", userID))
 			return nil, err
 		}
 

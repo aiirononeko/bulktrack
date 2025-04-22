@@ -1,15 +1,28 @@
-import type { LoaderFunctionArgs } from "react-router";
-import type { MenuApiResponse } from "./type"; // 型定義をインポート
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { redirect } from "react-router";
 
-// TODO: APIからメニュー一覧を取得する処理を実装する
-export async function loader({ context }: LoaderFunctionArgs) {
-  console.log("Fetching menus from API...");
-  const env = context.cloudflare.env;
+import type { Route } from "./+types/route";
+import type { MenuApiResponse } from "./type";
+
+export async function loader(args: Route.LoaderArgs) {
+  const env = args.context.cloudflare.env;
   const baseUrl = env?.API_URL || "http://localhost:5555";
   const apiUrl = `${baseUrl}/menus`;
 
+  const { userId, getToken } = await getAuth(args);
+  if (!userId) {
+    return redirect(`/signin?redirect_url=${args.request.url}`);
+  }
+
+  const token = await getToken();
+
   try {
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
     if (!response.ok) {
       console.error(`Failed to fetch menus: ${response.status} ${response.statusText}`);
       try {

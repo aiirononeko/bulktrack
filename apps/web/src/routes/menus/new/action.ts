@@ -1,5 +1,7 @@
-import type { ActionFunctionArgs } from "react-router";
+import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
+
+import type { Route } from "./+types/route";
 
 // 送信するメニュー項目の型 (バックエンドの MenuItemInput に合わせる)
 interface MenuItemToSend {
@@ -10,8 +12,19 @@ interface MenuItemToSend {
   planned_interval_seconds: number | null;
 }
 
-export async function action({ request, context }: ActionFunctionArgs) {
-  const formData = await request.formData();
+export async function action(args: Route.ActionArgs) {
+  const { userId, getToken } = await getAuth(args);
+  if (!userId) {
+    return redirect(`/signin?redirect_url=${args.request.url}`);
+  }
+
+  const token = await getToken();
+
+  const env = args.context.cloudflare.env;
+  const baseUrl = env?.API_URL || "http://localhost:5555";
+  const apiUrl = `${baseUrl}/menus`;
+
+  const formData = await args.request.formData();
   const menuName = formData.get("name") as string;
   const itemsJson = formData.get("items") as string | null; // items を JSON 文字列として取得
 
@@ -38,14 +51,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   console.log("Creating menu:", { name: menuName, items }); // 送信するデータを確認
 
-  const env = context.cloudflare.env;
-  const baseUrl = env?.API_URL || "http://localhost:5555";
-  const apiUrl = `${baseUrl}/menus`;
-
   try {
     const response = await fetch(apiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ name: menuName, items }), // name と items を送信
     });
 

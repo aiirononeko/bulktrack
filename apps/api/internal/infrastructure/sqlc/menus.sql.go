@@ -9,21 +9,20 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createMenu = `-- name: CreateMenu :one
 INSERT INTO menus (
   user_id, name
 ) VALUES (
-  $1, $2
+  $1::text, $2
 )
 RETURNING id, user_id, name, created_at
 `
 
 type CreateMenuParams struct {
-	UserID pgtype.UUID `json:"user_id"`
-	Name   string      `json:"name"`
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
 }
 
 func (q *Queries) CreateMenu(ctx context.Context, arg CreateMenuParams) (Menu, error) {
@@ -67,11 +66,11 @@ func (q *Queries) GetMenu(ctx context.Context, id uuid.UUID) (Menu, error) {
 
 const listMenusByUser = `-- name: ListMenusByUser :many
 SELECT id, user_id, name, created_at FROM menus
-WHERE user_id = $1
+WHERE user_id = $1::text
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListMenusByUser(ctx context.Context, userID pgtype.UUID) ([]Menu, error) {
+func (q *Queries) ListMenusByUser(ctx context.Context, userID string) ([]Menu, error) {
 	rows, err := q.db.Query(ctx, listMenusByUser, userID)
 	if err != nil {
 		return nil, err

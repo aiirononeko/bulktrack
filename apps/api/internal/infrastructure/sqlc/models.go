@@ -14,7 +14,7 @@ type Exercise struct {
 	Name                    string             `json:"name"`
 	MainTargetMuscleGroupID pgtype.UUID        `json:"main_target_muscle_group_id"`
 	IsCustom                pgtype.Bool        `json:"is_custom"`
-	CreatedByUserID         pgtype.UUID        `json:"created_by_user_id"`
+	CreatedByUserID         pgtype.Text        `json:"created_by_user_id"`
 	CreatedAt               pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -25,7 +25,7 @@ type ExerciseTargetMuscleGroup struct {
 
 type Menu struct {
 	ID        uuid.UUID          `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
+	UserID    string             `json:"user_id"`
 	Name      string             `json:"name"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
@@ -56,16 +56,9 @@ type Set struct {
 	Rpe        pgtype.Numeric `json:"rpe"`
 }
 
-type User struct {
-	ID        uuid.UUID          `json:"id"`
-	Email     string             `json:"email"`
-	Nickname  pgtype.Text        `json:"nickname"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-}
-
 type Workout struct {
 	ID        uuid.UUID          `json:"id"`
-	UserID    pgtype.UUID        `json:"user_id"`
+	UserID    string             `json:"user_id"`
 	MenuID    pgtype.UUID        `json:"menu_id"`
 	StartedAt pgtype.Timestamptz `json:"started_at"`
 	Note      pgtype.Text        `json:"note"`

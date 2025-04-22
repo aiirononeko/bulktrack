@@ -6,15 +6,17 @@ import (
 
 // Config アプリケーション設定
 type Config struct {
-	DatabaseURL string
-	Port        string
+	DatabaseURL    string
+	Port           string
+	ClerkSecretKey string
 }
 
 // NewConfig 環境変数から設定を読み込む
 func NewConfig() *Config {
 	return &Config{
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/bulktrack?sslmode=disable"),
-		Port:        getEnv("PORT", "5555"),
+		DatabaseURL:    getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/bulktrack?sslmode=disable"),
+		Port:           getEnv("PORT", "5555"),
+		ClerkSecretKey: getEnv("CLERK_SECRET_KEY", ""),
 	}
 }
 

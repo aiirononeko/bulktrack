@@ -4,14 +4,14 @@ WHERE id = $1 LIMIT 1;
 
 -- name: ListMenusByUser :many
 SELECT * FROM menus
-WHERE user_id = $1
+WHERE user_id = sqlc.arg(user_id)::text
 ORDER BY created_at DESC;
 
 -- name: CreateMenu :one
 INSERT INTO menus (
   user_id, name
 ) VALUES (
-  $1, $2
+  sqlc.arg(user_id)::text, sqlc.arg(name)
 )
 RETURNING *;
 

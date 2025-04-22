@@ -31,14 +31,11 @@ func NewWorkoutService(pool *pgxpool.Pool, logger *slog.Logger) *WorkoutService 
 }
 
 // ListWorkoutsByUser はユーザーのワークアウト一覧を取得する
-func (s *WorkoutService) ListWorkoutsByUser(ctx context.Context, userID uuid.UUID) ([]dto.WorkoutSummary, error) {
-	// ユーザーIDをpgtypeに変換
-	pgUserID := pgtype.UUID{Bytes: userID, Valid: true}
-
+func (s *WorkoutService) ListWorkoutsByUser(ctx context.Context, userID string) ([]dto.WorkoutSummary, error) {
 	// ワークアウト一覧の取得
-	workouts, err := s.queries.ListWorkoutsByUser(ctx, pgUserID)
+	workouts, err := s.queries.ListWorkoutsByUser(ctx, userID)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute ListWorkoutsByUser query", slog.Any("error", err), slog.String("user_id", userID.String()))
+		s.logger.ErrorContext(ctx, "Failed to execute ListWorkoutsByUser query", slog.Any("error", err), slog.String("user_id", userID))
 		return nil, err
 	}
 
@@ -88,22 +85,22 @@ func (s *WorkoutService) ListWorkoutsByUser(ctx context.Context, userID uuid.UUI
 }
 
 // StartWorkout は新しいワークアウトを開始する
-func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkoutRequest, userID uuid.UUID) (resp *dto.WorkoutResponse, err error) {
+func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkoutRequest, userID string) (resp *dto.WorkoutResponse, err error) {
 	// トランザクション開始
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to begin transaction for StartWorkout", slog.Any("error", err), slog.String("user_id", userID.String()))
+		s.logger.ErrorContext(ctx, "Failed to begin transaction for StartWorkout", slog.Any("error", err), slog.String("user_id", userID))
 		return nil, err
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			s.logger.ErrorContext(ctx, "Recovered in StartWorkout, rolling back transaction", slog.Any("panic_value", r), slog.String("user_id", userID.String()))
+			s.logger.ErrorContext(ctx, "Recovered in StartWorkout, rolling back transaction", slog.Any("panic_value", r), slog.String("user_id", userID))
 			tx.Rollback(ctx)
 			panic(r)
 		} else if err != nil {
 			rollErr := tx.Rollback(ctx)
 			if rollErr != nil {
-				s.logger.ErrorContext(ctx, "Failed to rollback transaction for StartWorkout", slog.Any("rollback_error", rollErr), slog.Any("original_error", err), slog.String("user_id", userID.String()))
+				s.logger.ErrorContext(ctx, "Failed to rollback transaction for StartWorkout", slog.Any("rollback_error", rollErr), slog.Any("original_error", err), slog.String("user_id", userID))
 			}
 		}
 	}()
@@ -111,7 +108,6 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 	qtx := sqlc.New(tx)
 
 	// UUIDをpgtypeに変換
-	pgUserID := pgtype.UUID{Bytes: userID, Valid: true}
 	pgMenuID := pgtype.UUID{Bytes: req.MenuID, Valid: true}
 
 	// ノートのpgtype変換
@@ -122,12 +118,12 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 
 	// ワークアウト作成
 	workout, err := qtx.CreateWorkout(ctx, sqlc.CreateWorkoutParams{
-		UserID: pgUserID,
+		UserID: userID,
 		MenuID: pgMenuID,
 		Note:   pgNote,
 	})
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute CreateWorkout query", slog.Any("error", err), slog.String("user_id", userID.String()), slog.String("menu_id", req.MenuID.String()))
+		s.logger.ErrorContext(ctx, "Failed to execute CreateWorkout query", slog.Any("error", err), slog.String("user_id", userID), slog.String("menu_id", req.MenuID.String()))
 		return nil, err
 	}
 
@@ -191,7 +187,7 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 
 	// トランザクションコミット
 	if err = tx.Commit(ctx); err != nil {
-		s.logger.ErrorContext(ctx, "Failed to commit transaction for StartWorkout", slog.Any("error", err), slog.String("user_id", userID.String()), slog.String("workout_id", workout.ID.String()))
+		s.logger.ErrorContext(ctx, "Failed to commit transaction for StartWorkout", slog.Any("error", err), slog.String("user_id", userID), slog.String("workout_id", workout.ID.String()))
 		return nil, err
 	}
 

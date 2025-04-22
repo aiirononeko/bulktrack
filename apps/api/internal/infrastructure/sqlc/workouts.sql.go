@@ -16,13 +16,13 @@ const createWorkout = `-- name: CreateWorkout :one
 INSERT INTO workouts (
   user_id, menu_id, note
 ) VALUES (
-  $1, $2, $3
+  $1::text, $2, $3
 )
 RETURNING id, user_id, menu_id, started_at, note
 `
 
 type CreateWorkoutParams struct {
-	UserID pgtype.UUID `json:"user_id"`
+	UserID string      `json:"user_id"`
 	MenuID pgtype.UUID `json:"menu_id"`
 	Note   pgtype.Text `json:"note"`
 }
@@ -70,11 +70,11 @@ func (q *Queries) GetWorkout(ctx context.Context, id uuid.UUID) (Workout, error)
 
 const listWorkoutsByUser = `-- name: ListWorkoutsByUser :many
 SELECT id, user_id, menu_id, started_at, note FROM workouts
-WHERE user_id = $1
+WHERE user_id = $1::text
 ORDER BY started_at DESC
 `
 
-func (q *Queries) ListWorkoutsByUser(ctx context.Context, userID pgtype.UUID) ([]Workout, error) {
+func (q *Queries) ListWorkoutsByUser(ctx context.Context, userID string) ([]Workout, error) {
 	rows, err := q.db.Query(ctx, listWorkoutsByUser, userID)
 	if err != nil {
 		return nil, err

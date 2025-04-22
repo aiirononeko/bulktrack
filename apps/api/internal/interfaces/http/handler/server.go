@@ -41,28 +41,29 @@ func NewServer(container *di.Container) *Server {
 		logger:          container.Logger,
 	}
 
-	// ロギングミドルウェアを作成
+	// ミドルウェアの作成
 	logging := middleware.LoggingMiddleware(s.logger)
+	auth := middleware.ClerkAuth(container.Config, s.logger)
 
-	// ルートの登録 (ミドルウェアでラップ)
+	// ルートの登録
 	s.mux.Handle("GET /health", logging(http.HandlerFunc(s.handleHealth)))
 
-	// トレーニングメニュー (ミドルウェアでラップ)
-	s.mux.Handle("GET /menus", logging(http.HandlerFunc(s.handleListMenus)))
-	s.mux.Handle("POST /menus", logging(http.HandlerFunc(s.handleCreateMenu)))
-	s.mux.Handle("GET /menus/{id}", logging(http.HandlerFunc(s.handleGetMenu)))
-	s.mux.Handle("DELETE /menus/{id}", logging(http.HandlerFunc(s.handleDeleteMenu)))
+	// トレーニングメニュー - 認証必須
+	s.mux.Handle("GET /menus", logging(auth(http.HandlerFunc(s.handleListMenus))))
+	s.mux.Handle("POST /menus", logging(auth(http.HandlerFunc(s.handleCreateMenu))))
+	s.mux.Handle("GET /menus/{id}", logging(auth(http.HandlerFunc(s.handleGetMenu))))
+	s.mux.Handle("DELETE /menus/{id}", logging(auth(http.HandlerFunc(s.handleDeleteMenu))))
 
-	// ワークアウト (ミドルウェアでラップ)
-	s.mux.Handle("GET /workouts", logging(http.HandlerFunc(s.handleListWorkouts)))
-	s.mux.Handle("POST /workouts", logging(http.HandlerFunc(s.handleStartWorkout)))
-	s.mux.Handle("GET /workouts/{id}", logging(http.HandlerFunc(s.handleGetWorkout)))
+	// ワークアウト - 認証必須
+	s.mux.Handle("GET /workouts", logging(auth(http.HandlerFunc(s.handleListWorkouts))))
+	s.mux.Handle("POST /workouts", logging(auth(http.HandlerFunc(s.handleStartWorkout))))
+	s.mux.Handle("GET /workouts/{id}", logging(auth(http.HandlerFunc(s.handleGetWorkout))))
 
-	// セット (ミドルウェアでラップ)
-	s.mux.Handle("PATCH /sets/{id}", logging(http.HandlerFunc(s.handleUpdateSet)))
+	// セット - 認証必須
+	s.mux.Handle("PATCH /sets/{id}", logging(auth(http.HandlerFunc(s.handleUpdateSet))))
 
-	// 種目 (追加)
-	s.mux.Handle("GET /exercises", logging(http.HandlerFunc(s.handleListExercises)))
+	// 種目 - 認証必須
+	s.mux.Handle("GET /exercises", logging(auth(http.HandlerFunc(s.handleListExercises))))
 
 	return s
 }
@@ -87,6 +88,14 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 
 // メニュー作成ハンドラー
 func (s *Server) handleCreateMenu(w http.ResponseWriter, r *http.Request) {
+	// コンテキストからユーザーIDを取得
+	userIDStr, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		s.logger.Error("User ID not found in context")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	// リクエストボディの読み取り
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -104,13 +113,11 @@ func (s *Server) handleCreateMenu(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ユーザーID取得 (認証は実装予定)
-	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
-
-	// メニュー作成
-	resp, err := s.menuService.CreateMenu(r.Context(), req, userID)
+	// メニュー作成 (userIDStr を渡す)
+	resp, err := s.menuService.CreateMenu(r.Context(), req, userIDStr) // userID.String() ではなく userIDStr を渡す
 	if err != nil {
-		s.logger.Error("Failed to create menu", slog.Any("error", err), slog.String("user_id", userID.String()), slog.Any("request", req))
+		// userID.String() ではなく userIDStr をログに出力
+		s.logger.Error("Failed to create menu", slog.Any("error", err), slog.String("user_id", userIDStr), slog.Any("request", req))
 		http.Error(w, fmt.Sprintf("Failed to create menu: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -173,13 +180,19 @@ func (s *Server) handleDeleteMenu(w http.ResponseWriter, r *http.Request) {
 
 // メニュー一覧取得ハンドラー
 func (s *Server) handleListMenus(w http.ResponseWriter, r *http.Request) {
-	// ユーザーID取得 (認証は実装予定)
-	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
+	// コンテキストからユーザーIDを取得
+	userIDStr, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		s.logger.Error("User ID not found in context")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-	// メニュー一覧取得
-	menus, err := s.menuService.ListMenusByUser(r.Context(), userID)
+	// メニュー一覧取得 (userIDStr を渡す)
+	menus, err := s.menuService.ListMenusByUser(r.Context(), userIDStr) // userID ではなく userIDStr を渡す
 	if err != nil {
-		s.logger.Error("Failed to list menus by user", slog.Any("error", err), slog.String("user_id", userID.String()))
+		// userID.String() ではなく userIDStr をログに出力
+		s.logger.Error("Failed to list menus by user", slog.Any("error", err), slog.String("user_id", userIDStr))
 		http.Error(w, fmt.Sprintf("Failed to list menus: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -191,13 +204,20 @@ func (s *Server) handleListMenus(w http.ResponseWriter, r *http.Request) {
 
 // ワークアウト一覧取得ハンドラー
 func (s *Server) handleListWorkouts(w http.ResponseWriter, r *http.Request) {
-	// ユーザーID取得 (認証は実装予定)
-	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
+	// コンテキストからユーザーIDを取得
+	userIDStr, ok := middleware.GetUserIDFromContext(r.Context())
+	s.logger.Debug("User ID from context", slog.String("user_id", userIDStr))
+	if !ok {
+		s.logger.Error("User ID not found in context")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-	// ワークアウト一覧取得
-	workouts, err := s.workoutService.ListWorkoutsByUser(r.Context(), userID)
+	// ワークアウト一覧取得 (userIDStr を渡す)
+	workouts, err := s.workoutService.ListWorkoutsByUser(r.Context(), userIDStr) // userID ではなく userIDStr を渡す
 	if err != nil {
-		s.logger.Error("Failed to list workouts by user", slog.Any("error", err), slog.String("user_id", userID.String()))
+		// userID.String() ではなく userIDStr をログに出力
+		s.logger.Error("Failed to list workouts by user", slog.Any("error", err), slog.String("user_id", userIDStr))
 		http.Error(w, fmt.Sprintf("Failed to list workouts: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -209,6 +229,14 @@ func (s *Server) handleListWorkouts(w http.ResponseWriter, r *http.Request) {
 
 // ワークアウト開始ハンドラー
 func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
+	// コンテキストからユーザーIDを取得
+	userIDStr, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		s.logger.Error("User ID not found in context")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	// リクエストボディの読み取り
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -226,13 +254,12 @@ func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ユーザーID取得 (認証は実装予定)
-	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
-
-	// ワークアウト開始
-	resp, err := s.workoutService.StartWorkout(r.Context(), req, userID)
+	// ワークアウト開始 (userIDStr を渡す)
+	// 注意: StartWorkout のシグネチャも変更が必要
+	resp, err := s.workoutService.StartWorkout(r.Context(), req, userIDStr)
 	if err != nil {
-		s.logger.Error("Failed to start workout", slog.Any("error", err), slog.String("user_id", userID.String()), slog.Any("request", req))
+		// userID.String() ではなく userIDStr をログに出力
+		s.logger.Error("Failed to start workout", slog.Any("error", err), slog.String("user_id", userIDStr), slog.Any("request", req))
 		http.Error(w, fmt.Sprintf("Failed to start workout: %v", err), http.StatusInternalServerError)
 		return
 	}
