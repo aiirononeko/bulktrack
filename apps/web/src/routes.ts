@@ -16,4 +16,7 @@ export default [
     route(":id", "routes/workouts/$id/route.tsx"),
     route("new/:menuId", "routes/workouts/new/$menuId/route.tsx"),
   ]),
+
+  route("signin/*", "routes/signin/route.tsx"),
+  route("signup/*", "routes/signup/route.tsx"),
 ] satisfies RouteConfig;

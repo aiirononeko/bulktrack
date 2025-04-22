@@ -1,5 +1,6 @@
+import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/react-router";
+import { rootAuthLoader } from "@clerk/react-router/ssr.server";
 import {
-  Link,
   Links,
   Meta,
   Outlet,
@@ -10,6 +11,10 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+
+export async function loader(args: Route.LoaderArgs) {
+  return rootAuthLoader(args);
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -42,27 +47,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+export default function App({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b border-gray-200 py-4">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold">BulkTrack</h1>
-          </div>
-        </div>
+    <ClerkProvider
+      loaderData={loaderData}
+      signUpFallbackRedirectUrl="/"
+      signInFallbackRedirectUrl="/"
+    >
+      <header className="flex items-center justify-center py-8 px-4">
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
       </header>
-      <main className="flex-1 py-6">
-        <div className="container mx-auto px-4">
-          <Outlet />
-        </div>
+      <main>
+        <Outlet />
       </main>
-      <footer className="border-t border-gray-200 py-4">
-        <div className="container mx-auto px-4 text-center text-gray-500">
-          <p>&copy; 2025 BulkTrack</p>
-        </div>
-      </footer>
-    </div>
+    </ClerkProvider>
   );
 }
 
