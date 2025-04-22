@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/aiirononeko/bulktrack/apps/api/internal/di"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/dto"
+	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/middleware"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/service"
 	"github.com/google/uuid"
 )
@@ -18,45 +20,43 @@ type Server struct {
 	container      *di.Container
 	menuService    *service.MenuService
 	workoutService *service.WorkoutService
-	summaryService *service.SummaryService
 	mux            *http.ServeMux
+	logger         *slog.Logger
 }
 
 // NewServer は新しいHTTPサーバーを作成
 func NewServer(container *di.Container) *Server {
 	// サービスの初期化
-	menuService := service.NewMenuService(container.DB)
-	workoutService := service.NewWorkoutService(container.DB)
-	summaryService := service.NewSummaryService(container.DB)
+	menuService := service.NewMenuService(container.DB, container.Logger)
+	workoutService := service.NewWorkoutService(container.DB, container.Logger)
 
 	s := &Server{
 		container:      container,
 		menuService:    menuService,
 		workoutService: workoutService,
-		summaryService: summaryService,
 		mux:            http.NewServeMux(),
+		logger:         container.Logger,
 	}
 
-	// ルートの登録
-	s.mux.HandleFunc("GET /health", s.handleHealth)
+	// ロギングミドルウェアを作成
+	logging := middleware.LoggingMiddleware(s.logger)
 
-	// トレーニングメニュー
-	s.mux.HandleFunc("GET /menus", s.handleListMenus)
-	s.mux.HandleFunc("POST /menus", s.handleCreateMenu)
-	s.mux.HandleFunc("GET /menus/{id}", s.handleGetMenu)
-	s.mux.HandleFunc("DELETE /menus/{id}", s.handleDeleteMenu)
+	// ルートの登録 (ミドルウェアでラップ)
+	s.mux.Handle("GET /health", logging(http.HandlerFunc(s.handleHealth)))
 
-	// ワークアウト
-	s.mux.HandleFunc("GET /workouts", s.handleListWorkouts)
-	s.mux.HandleFunc("POST /workouts", s.handleStartWorkout)
-	s.mux.HandleFunc("GET /workouts/{id}", s.handleGetWorkout)
+	// トレーニングメニュー (ミドルウェアでラップ)
+	s.mux.Handle("GET /menus", logging(http.HandlerFunc(s.handleListMenus)))
+	s.mux.Handle("POST /menus", logging(http.HandlerFunc(s.handleCreateMenu)))
+	s.mux.Handle("GET /menus/{id}", logging(http.HandlerFunc(s.handleGetMenu)))
+	s.mux.Handle("DELETE /menus/{id}", logging(http.HandlerFunc(s.handleDeleteMenu)))
 
-	// セット
-	s.mux.HandleFunc("PATCH /sets/{id}", s.handleUpdateSet)
+	// ワークアウト (ミドルウェアでラップ)
+	s.mux.Handle("GET /workouts", logging(http.HandlerFunc(s.handleListWorkouts)))
+	s.mux.Handle("POST /workouts", logging(http.HandlerFunc(s.handleStartWorkout)))
+	s.mux.Handle("GET /workouts/{id}", logging(http.HandlerFunc(s.handleGetWorkout)))
 
-	// トレーニングボリューム統計
-	s.mux.HandleFunc("GET /stats/weekly", s.handleGetCurrentWeekStats)
-	s.mux.HandleFunc("GET /stats/weekly/history", s.handleGetWeeklyStatsHistory)
+	// セット (ミドルウェアでラップ)
+	s.mux.Handle("PATCH /sets/{id}", logging(http.HandlerFunc(s.handleUpdateSet)))
 
 	return s
 }
@@ -70,6 +70,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	// DB接続確認
 	if err := s.container.DB.Ping(r.Context()); err != nil {
+		s.logger.Error("Database connection ping failed", slog.Any("error", err))
 		http.Error(w, "Database connection error", http.StatusServiceUnavailable)
 		return
 	}
@@ -83,6 +84,7 @@ func (s *Server) handleCreateMenu(w http.ResponseWriter, r *http.Request) {
 	// リクエストボディの読み取り
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		s.logger.Error("Failed to read request body", slog.Any("error", err))
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
@@ -91,6 +93,7 @@ func (s *Server) handleCreateMenu(w http.ResponseWriter, r *http.Request) {
 	// リクエストのパース
 	var req dto.CreateMenuRequest
 	if err := json.Unmarshal(body, &req); err != nil {
+		s.logger.Error("Failed to unmarshal request body", slog.Any("error", err), slog.String("body", string(body)))
 		http.Error(w, "Invalid request format", http.StatusBadRequest)
 		return
 	}
@@ -101,6 +104,7 @@ func (s *Server) handleCreateMenu(w http.ResponseWriter, r *http.Request) {
 	// メニュー作成
 	resp, err := s.menuService.CreateMenu(r.Context(), req, userID)
 	if err != nil {
+		s.logger.Error("Failed to create menu", slog.Any("error", err), slog.String("user_id", userID.String()), slog.Any("request", req))
 		http.Error(w, fmt.Sprintf("Failed to create menu: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -119,6 +123,7 @@ func (s *Server) handleGetMenu(w http.ResponseWriter, r *http.Request) {
 
 	menuID, err := uuid.Parse(idStr)
 	if err != nil {
+		s.logger.Warn("Invalid menu ID format", slog.String("path", r.URL.Path), slog.String("id_str", idStr), slog.Any("error", err))
 		http.Error(w, "Invalid menu ID", http.StatusBadRequest)
 		return
 	}
@@ -126,6 +131,7 @@ func (s *Server) handleGetMenu(w http.ResponseWriter, r *http.Request) {
 	// メニュー取得
 	resp, err := s.menuService.GetMenuWithItems(r.Context(), menuID)
 	if err != nil {
+		s.logger.Error("Failed to get menu", slog.Any("error", err), slog.String("menu_id", menuID.String()))
 		http.Error(w, fmt.Sprintf("Failed to get menu: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -143,12 +149,14 @@ func (s *Server) handleDeleteMenu(w http.ResponseWriter, r *http.Request) {
 
 	menuID, err := uuid.Parse(idStr)
 	if err != nil {
+		s.logger.Warn("Invalid menu ID format for delete", slog.String("path", r.URL.Path), slog.String("id_str", idStr), slog.Any("error", err))
 		http.Error(w, "Invalid menu ID", http.StatusBadRequest)
 		return
 	}
 
 	// メニュー削除
 	if err := s.menuService.DeleteMenu(r.Context(), menuID); err != nil {
+		s.logger.Error("Failed to delete menu", slog.Any("error", err), slog.String("menu_id", menuID.String()))
 		http.Error(w, fmt.Sprintf("Failed to delete menu: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -165,6 +173,7 @@ func (s *Server) handleListMenus(w http.ResponseWriter, r *http.Request) {
 	// メニュー一覧取得
 	menus, err := s.menuService.ListMenusByUser(r.Context(), userID)
 	if err != nil {
+		s.logger.Error("Failed to list menus by user", slog.Any("error", err), slog.String("user_id", userID.String()))
 		http.Error(w, fmt.Sprintf("Failed to list menus: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -182,6 +191,7 @@ func (s *Server) handleListWorkouts(w http.ResponseWriter, r *http.Request) {
 	// ワークアウト一覧取得
 	workouts, err := s.workoutService.ListWorkoutsByUser(r.Context(), userID)
 	if err != nil {
+		s.logger.Error("Failed to list workouts by user", slog.Any("error", err), slog.String("user_id", userID.String()))
 		http.Error(w, fmt.Sprintf("Failed to list workouts: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -196,6 +206,7 @@ func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
 	// リクエストボディの読み取り
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		s.logger.Error("Failed to read request body for start workout", slog.Any("error", err))
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
@@ -204,6 +215,7 @@ func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
 	// リクエストのパース
 	var req dto.CreateWorkoutRequest
 	if err := json.Unmarshal(body, &req); err != nil {
+		s.logger.Error("Failed to unmarshal request body for start workout", slog.Any("error", err), slog.String("body", string(body)))
 		http.Error(w, "Invalid request format", http.StatusBadRequest)
 		return
 	}
@@ -214,6 +226,7 @@ func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
 	// ワークアウト開始
 	resp, err := s.workoutService.StartWorkout(r.Context(), req, userID)
 	if err != nil {
+		s.logger.Error("Failed to start workout", slog.Any("error", err), slog.String("user_id", userID.String()), slog.Any("request", req))
 		http.Error(w, fmt.Sprintf("Failed to start workout: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -232,6 +245,7 @@ func (s *Server) handleGetWorkout(w http.ResponseWriter, r *http.Request) {
 
 	workoutID, err := uuid.Parse(idStr)
 	if err != nil {
+		s.logger.Warn("Invalid workout ID format", slog.String("path", r.URL.Path), slog.String("id_str", idStr), slog.Any("error", err))
 		http.Error(w, "Invalid workout ID", http.StatusBadRequest)
 		return
 	}
@@ -239,6 +253,7 @@ func (s *Server) handleGetWorkout(w http.ResponseWriter, r *http.Request) {
 	// ワークアウト取得
 	resp, err := s.workoutService.GetWorkoutWithSets(r.Context(), workoutID)
 	if err != nil {
+		s.logger.Error("Failed to get workout with sets", slog.Any("error", err), slog.String("workout_id", workoutID.String()))
 		http.Error(w, fmt.Sprintf("Failed to get workout: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -256,6 +271,7 @@ func (s *Server) handleUpdateSet(w http.ResponseWriter, r *http.Request) {
 
 	setID, err := uuid.Parse(idStr)
 	if err != nil {
+		s.logger.Warn("Invalid set ID format", slog.String("path", r.URL.Path), slog.String("id_str", idStr), slog.Any("error", err))
 		http.Error(w, "Invalid set ID", http.StatusBadRequest)
 		return
 	}
@@ -263,71 +279,30 @@ func (s *Server) handleUpdateSet(w http.ResponseWriter, r *http.Request) {
 	// リクエストボディの読み取り
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		s.logger.Error("Failed to read request body for update set", slog.Any("error", err), slog.String("set_id", setID.String()))
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
-	// リクエストのパース
+	// リクエストのパース (UpdateSetRequest DTOを使用)
 	var req dto.UpdateSetRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "Invalid request format", http.StatusBadRequest)
+		s.logger.Error("Failed to unmarshal request body for update set", slog.Any("error", err), slog.String("set_id", setID.String()), slog.String("body", string(body)))
+		http.Error(w, "Invalid request format: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// セット更新
+	// セット更新 (修正された UpdateSetRequest を渡す)
 	resp, err := s.workoutService.UpdateSet(r.Context(), setID, req)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to update set: %v", err), http.StatusInternalServerError)
+		// エラーレスポンスを改善 (例: どのセットの更新に失敗したか)
+		s.logger.Error("Failed to update set", slog.Any("error", err), slog.String("set_id", setID.String()), slog.Any("request", req))
+		http.Error(w, fmt.Sprintf("Failed to update set (ID: %s): %v", setID, err), http.StatusInternalServerError)
 		return
 	}
 
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
-}
-
-// 週間トレーニングボリューム統計取得ハンドラー
-func (s *Server) handleGetCurrentWeekStats(w http.ResponseWriter, r *http.Request) {
-	// ユーザーID取得 (認証は実装予定)
-	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
-
-	// 現在週のトレーニングボリューム取得
-	summary, err := s.summaryService.GetCurrentWeeklySummary(r.Context(), userID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get current week stats: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// レスポンス返却
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(summary)
-}
-
-// 過去の週間トレーニングボリューム履歴取得ハンドラー
-func (s *Server) handleGetWeeklyStatsHistory(w http.ResponseWriter, r *http.Request) {
-	// ユーザーID取得 (認証は実装予定)
-	userID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // テストユーザーID
-
-	// クエリパラメータからlimitを取得（デフォルトは12週間）
-	limitStr := r.URL.Query().Get("limit")
-	limit := int32(12)
-	if limitStr != "" {
-		var limitInt int
-		_, err := fmt.Sscanf(limitStr, "%d", &limitInt)
-		if err == nil && limitInt > 0 {
-			limit = int32(limitInt)
-		}
-	}
-
-	// 週間統計履歴取得
-	summaries, err := s.summaryService.GetRecentWeeklySummaries(r.Context(), userID, limit)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get weekly stats history: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// レスポンス返却
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(dto.WeeklyVolumeSummaryResponse{Summaries: summaries})
 }

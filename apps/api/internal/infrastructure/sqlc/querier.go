@@ -12,6 +12,7 @@ import (
 )
 
 type Querier interface {
+	CreateExercise(ctx context.Context, arg CreateExerciseParams) (Exercise, error)
 	CreateMenu(ctx context.Context, arg CreateMenuParams) (Menu, error)
 	CreateMenuItem(ctx context.Context, arg CreateMenuItemParams) (MenuItem, error)
 	CreateSet(ctx context.Context, arg CreateSetParams) (Set, error)
@@ -22,19 +23,18 @@ type Querier interface {
 	DeleteSet(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeleteWorkout(ctx context.Context, id uuid.UUID) error
+	GetExercise(ctx context.Context, id uuid.UUID) (Exercise, error)
 	GetMenu(ctx context.Context, id uuid.UUID) (Menu, error)
 	GetMenuItem(ctx context.Context, id uuid.UUID) (MenuItem, error)
 	GetSet(ctx context.Context, id uuid.UUID) (Set, error)
 	GetUser(ctx context.Context, id uuid.UUID) (User, error)
-	GetWeeklySummary(ctx context.Context, arg GetWeeklySummaryParams) (WeeklySummary, error)
 	GetWorkout(ctx context.Context, id uuid.UUID) (Workout, error)
-	ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]MenuItem, error)
+	ListExercises(ctx context.Context) ([]ListExercisesRow, error)
+	ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]ListMenuItemsByMenuRow, error)
 	ListMenusByUser(ctx context.Context, userID pgtype.UUID) ([]Menu, error)
-	ListSetsByWorkout(ctx context.Context, workoutID pgtype.UUID) ([]Set, error)
+	ListSetsByWorkout(ctx context.Context, workoutID pgtype.UUID) ([]ListSetsByWorkoutRow, error)
 	ListUsers(ctx context.Context) ([]User, error)
-	ListWeeklySummaries(ctx context.Context, arg ListWeeklySummariesParams) ([]WeeklySummary, error)
 	ListWorkoutsByUser(ctx context.Context, userID pgtype.UUID) ([]Workout, error)
-	RefreshWeeklySummaries(ctx context.Context) error
 	UpdateMenu(ctx context.Context, arg UpdateMenuParams) (Menu, error)
 	UpdateMenuItem(ctx context.Context, arg UpdateMenuItemParams) (MenuItem, error)
 	UpdateSet(ctx context.Context, arg UpdateSetParams) (Set, error)

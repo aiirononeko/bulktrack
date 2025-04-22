@@ -1,8 +1,7 @@
 package di
 
 import (
-	"context"
-	"log"
+	"log/slog"
 
 	"github.com/aiirononeko/bulktrack/apps/api/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,18 +11,14 @@ import (
 type Container struct {
 	Config *config.Config
 	DB     *pgxpool.Pool
+	Logger *slog.Logger
 }
 
 // NewContainer は新しいDIコンテナを作成
-func NewContainer(cfg *config.Config) *Container {
-	// データベース接続
-	dbPool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-
+func NewContainer(cfg *config.Config, db *pgxpool.Pool, logger *slog.Logger) *Container {
 	return &Container{
 		Config: cfg,
-		DB:     dbPool,
+		DB:     db,
+		Logger: logger,
 	}
 }

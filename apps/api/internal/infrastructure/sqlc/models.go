@@ -9,6 +9,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Exercise struct {
+	ID                      uuid.UUID          `json:"id"`
+	Name                    string             `json:"name"`
+	MainTargetMuscleGroupID pgtype.UUID        `json:"main_target_muscle_group_id"`
+	IsCustom                pgtype.Bool        `json:"is_custom"`
+	CreatedByUserID         pgtype.UUID        `json:"created_by_user_id"`
+	CreatedAt               pgtype.Timestamptz `json:"created_at"`
+}
+
+type ExerciseTargetMuscleGroup struct {
+	ExerciseID    uuid.UUID `json:"exercise_id"`
+	MuscleGroupID uuid.UUID `json:"muscle_group_id"`
+}
+
 type Menu struct {
 	ID        uuid.UUID          `json:"id"`
 	UserID    pgtype.UUID        `json:"user_id"`
@@ -17,21 +31,29 @@ type Menu struct {
 }
 
 type MenuItem struct {
-	ID          uuid.UUID   `json:"id"`
-	MenuID      pgtype.UUID `json:"menu_id"`
-	Exercise    string      `json:"exercise"`
-	SetOrder    int32       `json:"set_order"`
-	PlannedReps pgtype.Int4 `json:"planned_reps"`
+	ID                     uuid.UUID   `json:"id"`
+	MenuID                 pgtype.UUID `json:"menu_id"`
+	ExerciseID             pgtype.UUID `json:"exercise_id"`
+	SetOrder               int32       `json:"set_order"`
+	PlannedSets            pgtype.Int4 `json:"planned_sets"`
+	PlannedReps            pgtype.Int4 `json:"planned_reps"`
+	PlannedIntervalSeconds pgtype.Int4 `json:"planned_interval_seconds"`
+}
+
+type MuscleGroup struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }
 
 type Set struct {
-	ID        uuid.UUID      `json:"id"`
-	WorkoutID pgtype.UUID    `json:"workout_id"`
-	Exercise  string         `json:"exercise"`
-	SetOrder  int32          `json:"set_order"`
-	WeightKg  pgtype.Numeric `json:"weight_kg"`
-	Reps      int32          `json:"reps"`
-	Rpe       pgtype.Numeric `json:"rpe"`
+	ID         uuid.UUID      `json:"id"`
+	WorkoutID  pgtype.UUID    `json:"workout_id"`
+	ExerciseID pgtype.UUID    `json:"exercise_id"`
+	SetOrder   int32          `json:"set_order"`
+	WeightKg   pgtype.Numeric `json:"weight_kg"`
+	Reps       int32          `json:"reps"`
+	Rir        pgtype.Numeric `json:"rir"`
+	Rpe        pgtype.Numeric `json:"rpe"`
 }
 
 type User struct {
@@ -39,13 +61,6 @@ type User struct {
 	Email     string             `json:"email"`
 	Nickname  pgtype.Text        `json:"nickname"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
-}
-
-type WeeklySummary struct {
-	UserID      pgtype.UUID `json:"user_id"`
-	Week        pgtype.Date `json:"week"`
-	TotalVolume int64       `json:"total_volume"`
-	Est1rm      interface{} `json:"est_1rm"`
 }
 
 type Workout struct {

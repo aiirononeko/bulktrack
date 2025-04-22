@@ -30,9 +30,10 @@ type WorkoutSummary struct {
 // SetView はセットの表示を表す
 type SetView struct {
 	ID       uuid.UUID `json:"id"`
-	Exercise string    `json:"exercise"`
+	Exercise string    `json:"exercise_name"`
 	SetOrder int32     `json:"set_order"`
 	WeightKg float64   `json:"weight_kg"`
 	Reps     int32     `json:"reps"`
-	RPE      float64   `json:"rpe,omitempty"`
+	RIR      *float64  `json:"rir,omitempty"`
+	RPE      *float64  `json:"rpe,omitempty"`
 }

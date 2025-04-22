@@ -14,34 +14,40 @@ import (
 
 const createMenuItem = `-- name: CreateMenuItem :one
 INSERT INTO menu_items (
-  menu_id, exercise, set_order, planned_reps
+  menu_id, exercise_id, set_order, planned_sets, planned_reps, planned_interval_seconds
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3, $4, $5, $6
 )
-RETURNING id, menu_id, exercise, set_order, planned_reps
+RETURNING id, menu_id, exercise_id, set_order, planned_sets, planned_reps, planned_interval_seconds
 `
 
 type CreateMenuItemParams struct {
-	MenuID      pgtype.UUID `json:"menu_id"`
-	Exercise    string      `json:"exercise"`
-	SetOrder    int32       `json:"set_order"`
-	PlannedReps pgtype.Int4 `json:"planned_reps"`
+	MenuID                 pgtype.UUID `json:"menu_id"`
+	ExerciseID             pgtype.UUID `json:"exercise_id"`
+	SetOrder               int32       `json:"set_order"`
+	PlannedSets            pgtype.Int4 `json:"planned_sets"`
+	PlannedReps            pgtype.Int4 `json:"planned_reps"`
+	PlannedIntervalSeconds pgtype.Int4 `json:"planned_interval_seconds"`
 }
 
 func (q *Queries) CreateMenuItem(ctx context.Context, arg CreateMenuItemParams) (MenuItem, error) {
 	row := q.db.QueryRow(ctx, createMenuItem,
 		arg.MenuID,
-		arg.Exercise,
+		arg.ExerciseID,
 		arg.SetOrder,
+		arg.PlannedSets,
 		arg.PlannedReps,
+		arg.PlannedIntervalSeconds,
 	)
 	var i MenuItem
 	err := row.Scan(
 		&i.ID,
 		&i.MenuID,
-		&i.Exercise,
+		&i.ExerciseID,
 		&i.SetOrder,
+		&i.PlannedSets,
 		&i.PlannedReps,
+		&i.PlannedIntervalSeconds,
 	)
 	return i, err
 }
@@ -57,7 +63,7 @@ func (q *Queries) DeleteMenuItem(ctx context.Context, id uuid.UUID) error {
 }
 
 const getMenuItem = `-- name: GetMenuItem :one
-SELECT id, menu_id, exercise, set_order, planned_reps FROM menu_items
+SELECT id, menu_id, exercise_id, set_order, planned_sets, planned_reps, planned_interval_seconds FROM menu_items
 WHERE id = $1 LIMIT 1
 `
 
@@ -67,34 +73,52 @@ func (q *Queries) GetMenuItem(ctx context.Context, id uuid.UUID) (MenuItem, erro
 	err := row.Scan(
 		&i.ID,
 		&i.MenuID,
-		&i.Exercise,
+		&i.ExerciseID,
 		&i.SetOrder,
+		&i.PlannedSets,
 		&i.PlannedReps,
+		&i.PlannedIntervalSeconds,
 	)
 	return i, err
 }
 
 const listMenuItemsByMenu = `-- name: ListMenuItemsByMenu :many
-SELECT id, menu_id, exercise, set_order, planned_reps FROM menu_items
-WHERE menu_id = $1
-ORDER BY set_order
+SELECT mi.id, mi.menu_id, mi.exercise_id, e.name as exercise_name, mi.set_order, mi.planned_sets, mi.planned_reps, mi.planned_interval_seconds 
+FROM menu_items mi
+JOIN exercises e ON mi.exercise_id = e.id
+WHERE mi.menu_id = $1
+ORDER BY mi.set_order
 `
 
-func (q *Queries) ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]MenuItem, error) {
+type ListMenuItemsByMenuRow struct {
+	ID                     uuid.UUID   `json:"id"`
+	MenuID                 pgtype.UUID `json:"menu_id"`
+	ExerciseID             pgtype.UUID `json:"exercise_id"`
+	ExerciseName           string      `json:"exercise_name"`
+	SetOrder               int32       `json:"set_order"`
+	PlannedSets            pgtype.Int4 `json:"planned_sets"`
+	PlannedReps            pgtype.Int4 `json:"planned_reps"`
+	PlannedIntervalSeconds pgtype.Int4 `json:"planned_interval_seconds"`
+}
+
+func (q *Queries) ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]ListMenuItemsByMenuRow, error) {
 	rows, err := q.db.Query(ctx, listMenuItemsByMenu, menuID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []MenuItem{}
+	items := []ListMenuItemsByMenuRow{}
 	for rows.Next() {
-		var i MenuItem
+		var i ListMenuItemsByMenuRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.MenuID,
-			&i.Exercise,
+			&i.ExerciseID,
+			&i.ExerciseName,
 			&i.SetOrder,
+			&i.PlannedSets,
 			&i.PlannedReps,
+			&i.PlannedIntervalSeconds,
 		); err != nil {
 			return nil, err
 		}
@@ -108,26 +132,36 @@ func (q *Queries) ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) (
 
 const updateMenuItem = `-- name: UpdateMenuItem :one
 UPDATE menu_items
-SET exercise = $2, planned_reps = $3
+SET exercise_id = $2, planned_sets = $3, planned_reps = $4, planned_interval_seconds = $5
 WHERE id = $1
-RETURNING id, menu_id, exercise, set_order, planned_reps
+RETURNING id, menu_id, exercise_id, set_order, planned_sets, planned_reps, planned_interval_seconds
 `
 
 type UpdateMenuItemParams struct {
-	ID          uuid.UUID   `json:"id"`
-	Exercise    string      `json:"exercise"`
-	PlannedReps pgtype.Int4 `json:"planned_reps"`
+	ID                     uuid.UUID   `json:"id"`
+	ExerciseID             pgtype.UUID `json:"exercise_id"`
+	PlannedSets            pgtype.Int4 `json:"planned_sets"`
+	PlannedReps            pgtype.Int4 `json:"planned_reps"`
+	PlannedIntervalSeconds pgtype.Int4 `json:"planned_interval_seconds"`
 }
 
 func (q *Queries) UpdateMenuItem(ctx context.Context, arg UpdateMenuItemParams) (MenuItem, error) {
-	row := q.db.QueryRow(ctx, updateMenuItem, arg.ID, arg.Exercise, arg.PlannedReps)
+	row := q.db.QueryRow(ctx, updateMenuItem,
+		arg.ID,
+		arg.ExerciseID,
+		arg.PlannedSets,
+		arg.PlannedReps,
+		arg.PlannedIntervalSeconds,
+	)
 	var i MenuItem
 	err := row.Scan(
 		&i.ID,
 		&i.MenuID,
-		&i.Exercise,
+		&i.ExerciseID,
 		&i.SetOrder,
+		&i.PlannedSets,
 		&i.PlannedReps,
+		&i.PlannedIntervalSeconds,
 	)
 	return i, err
 }

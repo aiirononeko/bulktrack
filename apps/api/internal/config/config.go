@@ -14,7 +14,7 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/bulktrack?sslmode=disable"),
-		Port:        getEnv("PORT", "8080"),
+		Port:        getEnv("PORT", "5555"),
 	}
 }
 

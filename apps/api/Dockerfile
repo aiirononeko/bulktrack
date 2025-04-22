@@ -6,6 +6,6 @@ RUN go build -o /app ./apps/api/cmd/server
 
 # ---- Run stage ----
 FROM gcr.io/distroless/base-debian12
-ENV PORT=8080
+ENV PORT=5555
 COPY --from=builder /app /app
 ENTRYPOINT ["/app"]

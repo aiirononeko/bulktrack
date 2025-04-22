@@ -43,7 +43,7 @@ React Router v7では、関心の分離に基づいて以下のようにファ�
       /action.ts       # データ変更ロジック
       /$subRoute/      # ネストされたルート
       /components/     # このルート専用のコンポーネント
-      /type.ts         # 型定義
+      /types.ts        # 型定義
 ```
 
 ### 各ファイルの役割
@@ -62,7 +62,7 @@ React Router v7では、関心の分離に基づいて以下のようにファ�
   ```ts
   export async function loader({ context, params }) {
     const env = context.cloudflare.env;
-    const baseUrl = env?.API_URL || "http://localhost:8080";
+    const baseUrl = env?.API_URL || "http://localhost:5555";
     // APIからデータを取得
     return { data };
   }
@@ -97,7 +97,7 @@ React Router v7では、関心の分離に基づいて以下のようにファ�
 - **API連携**: Cloudflare環境変数を活用
   ```ts
   const env = context.cloudflare.env;
-  const baseUrl = env?.API_URL || "http://localhost:8080";
+  const baseUrl = env?.API_URL || "http://localhost:5555";
   ```
 
 ## ローカル開発

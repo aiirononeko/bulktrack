@@ -10,9 +10,11 @@ type CreateMenuRequest struct {
 
 // MenuItemInput はメニュー項目の入力を表す
 type MenuItemInput struct {
-	Exercise    string `json:"exercise"`
-	SetOrder    int32  `json:"set_order"`
-	PlannedReps int32  `json:"planned_reps"`
+	ExerciseID             uuid.UUID `json:"exercise_id"`
+	SetOrder               int32     `json:"set_order"`
+	PlannedSets            *int32    `json:"planned_sets,omitempty"`
+	PlannedReps            *int32    `json:"planned_reps,omitempty"`
+	PlannedIntervalSeconds *int32    `json:"planned_interval_seconds,omitempty"`
 }
 
 // MenuResponse はメニュー作成レスポンスを表す
@@ -25,8 +27,11 @@ type MenuResponse struct {
 
 // MenuItemView はメニュー項目の表示を表す
 type MenuItemView struct {
-	ID          uuid.UUID `json:"id"`
-	Exercise    string    `json:"exercise"`
-	SetOrder    int32     `json:"set_order"`
-	PlannedReps int32     `json:"planned_reps"`
+	ID                     uuid.UUID `json:"id"`
+	ExerciseID             uuid.UUID `json:"exercise_id"`
+	ExerciseName           string    `json:"exercise_name"`
+	SetOrder               int32     `json:"set_order"`
+	PlannedSets            *int32    `json:"planned_sets,omitempty"`
+	PlannedReps            *int32    `json:"planned_reps,omitempty"`
+	PlannedIntervalSeconds *int32    `json:"planned_interval_seconds,omitempty"`
 }
