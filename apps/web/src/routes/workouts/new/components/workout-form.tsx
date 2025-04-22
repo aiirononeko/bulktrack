@@ -1,8 +1,11 @@
 import { Field } from "@base-ui-components/react/field";
-import { Form } from "@base-ui-components/react/form";
+import { Form as BaseForm } from "@base-ui-components/react/form";
 import { useEffect, useState } from "react";
 import { useActionData, useSubmit } from "react-router";
 import type { MenuExerciseTemplate } from "../types";
+
+// 強度指標モード (RIR or RPE)
+type IntensityMode = "rir" | "rpe";
 
 // WorkoutFormのpropsの型を定義
 interface WorkoutFormProps {
@@ -14,7 +17,8 @@ interface WorkoutSet {
   id: string; // ユニークなID (例: uuid)
   weight: string;
   reps: string;
-  rir: string;
+  rir: string; // RIRの値
+  rpe: string; // RPEの値 (追加)
 }
 
 interface ExerciseLog {
@@ -23,53 +27,49 @@ interface ExerciseLog {
   sets: WorkoutSet[];
 }
 
-// WorkoutForm コンポーネントを props を受け取るように変更
+// WorkoutForm コンポーネント
 export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
-  // 初期エクササイズをログに出力して確認
   console.log("WorkoutForm received menuId:", menuId);
   console.log("WorkoutForm received initialExercises:", initialExercises);
 
-  // ログを管理するためのState
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
-  // base-ui の Form でエラーを管理する場合に使用
-  const [errors, setErrors] = useState({}); // エラー状態を追加
+  const [errors, setErrors] = useState({});
+  const [intensityMode, setIntensityMode] = useState<IntensityMode>("rir"); // 強度指標モードのState (デフォルトRIR)
 
-  // Action Dataを取得（エラーや成功メッセージを表示するために使用可能）
   const actionData = useActionData() as { error?: string } | undefined;
-
-  // useSubmitフックを取得
   const submit = useSubmit();
 
-  // initialExercises が変更されたら exerciseLogs を初期化する
+  // 初期化ロジック
   useEffect(() => {
     const initialLogs = initialExercises.map((exercise) => ({
-      exerciseId: exercise.id, // プロパティ名を修正
-      exerciseName: exercise.name, // プロパティ名を修正
-      // 初期セットを3つ生成 (空の値で)
+      exerciseId: exercise.id,
+      exerciseName: exercise.name,
       sets: Array.from({ length: 3 }, () => ({
         id: crypto.randomUUID(),
         weight: "",
         reps: "",
         rir: "",
+        rpe: "", // rpe も初期化
       })),
     }));
     setExerciseLogs(initialLogs);
-  }, [initialExercises]); // initialExercises を依存配列に追加
+  }, [initialExercises]);
 
-  // セット追加のハンドラ
+  // セット追加
   const handleAddSet = (exerciseLogIndex: number) => {
     const newSet: WorkoutSet = {
-      id: crypto.randomUUID(), // Reactのkey用にユニークIDを生成
+      id: crypto.randomUUID(),
       weight: "",
       reps: "",
       rir: "",
+      rpe: "", // rpe も追加
     };
     const updatedLogs = [...exerciseLogs];
     updatedLogs[exerciseLogIndex].sets.push(newSet);
     setExerciseLogs(updatedLogs);
   };
 
-  // 入力値変更のハンドラ
+  // 入力値変更
   const handleInputChange = (
     exerciseLogIndex: number,
     setIndex: number,
@@ -77,37 +77,63 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
     value: string
   ) => {
     const updatedLogs = [...exerciseLogs];
-    updatedLogs[exerciseLogIndex].sets[setIndex][field] = value;
+    const targetSet = updatedLogs[exerciseLogIndex].sets[setIndex];
+
+    // rir/rpe フィールドの場合、現在のモードに基づいて更新
+    if (field === "rir") {
+      targetSet.rir = value;
+      // 反対側のモードの値はクリアする（任意）
+      // targetSet.rpe = "";
+    } else if (field === "rpe") {
+      targetSet.rpe = value;
+      // 反対側のモードの値はクリアする（任意）
+      // targetSet.rir = "";
+    } else {
+      // weight, reps はそのまま更新
+      targetSet[field] = value;
+    }
+
     setExerciseLogs(updatedLogs);
   };
 
-  // フォーム送信時のハンドラ
+  // フォーム送信
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    // FormDataオブジェクトに値を設定
     const formData = new FormData();
 
-    // ワークアウトデータをJSON形式でFormDataに追加
+    // 送信する exerciseLogs を準備 (rir/rpeを整理)
+    const logsToSend = exerciseLogs.map((log) => ({
+      ...log,
+      sets: log.sets.map((set) => {
+        // 送信データを作成。現在のモードに応じてrir/rpeを設定
+        const setData: Partial<WorkoutSet> & { weight: string; reps: string } = {
+          id: set.id,
+          weight: set.weight,
+          reps: set.reps,
+          rir: intensityMode === "rir" ? set.rir : "", // モードに合わせて値を設定、他方は空文字 or null
+          rpe: intensityMode === "rpe" ? set.rpe : "", // モードに合わせて値を設定、他方は空文字 or null
+        };
+        // API が null を期待する場合、空文字を null に変換
+        // if (setData.rir === "") setData.rir = null;
+        // if (setData.rpe === "") setData.rpe = null;
+        return setData;
+      }),
+    }));
+
     formData.append(
       "workout",
       JSON.stringify({
         menuId,
-        exercises: exerciseLogs,
+        exercises: logsToSend, // 整理したデータを送信
       })
     );
 
-    // useSubmitを使用してフォームデータを送信
     submit(formData, { method: "post" });
   };
 
   return (
-    <Form
-      onSubmit={handleFormSubmit}
-      className="space-y-6"
-      errors={errors}
-      onClearErrors={setErrors}
-    >
+    <BaseForm onSubmit={handleFormSubmit} className="space-y-6">
+      {/* エラー表示 */}
       {actionData?.error && (
         <div
           className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
@@ -116,39 +142,74 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
           <span className="block sm:inline">{actionData.error}</span>
         </div>
       )}
+
+      {/* RIR/RPE 選択UI */}
+      <div className="mb-4 p-3 border rounded-md bg-gray-50">
+        <div id="intensity-mode-label" className="block text-sm font-medium text-gray-700 mb-2">
+          強度指標の入力モード:
+        </div>
+        <div
+          className="flex items-center space-x-4"
+          role="radiogroup"
+          aria-labelledby="intensity-mode-label"
+        >
+          <label className="flex items-center">
+            <input
+              id="intensity-mode-rir"
+              type="radio"
+              name="intensityMode"
+              value="rir"
+              checked={intensityMode === "rir"}
+              onChange={() => setIntensityMode("rir")}
+              className="form-radio h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+            />
+            <span className="ml-2 text-sm text-gray-700">RIR (Reps in Reserve)</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              id="intensity-mode-rpe"
+              type="radio"
+              name="intensityMode"
+              value="rpe"
+              checked={intensityMode === "rpe"}
+              onChange={() => setIntensityMode("rpe")}
+              className="form-radio h-4 w-4 text-blue-600 transition duration-150 ease-in-out"
+            />
+            <span className="ml-2 text-sm text-gray-700">RPE (Rating of Perceived Exertion)</span>
+          </label>
+        </div>
+      </div>
+
+      {/* 各エクササイズのログ */}
       {exerciseLogs.map((log, exerciseIndex) => (
-        // Card を div と Tailwind クラスに置き換え
         <div key={log.exerciseId} className="border rounded-lg p-4 shadow-sm mb-4">
-          {/* CardHeader を div と Tailwind クラスに置き換え */}
           <div className="mb-2">
-            {/* CardTitle を h3 と Tailwind クラスに置き換え */}
             <h3 className="text-lg font-semibold">{log.exerciseName}</h3>
           </div>
-          {/* CardContent を div と Tailwind クラスに置き換え */}
           <div className="space-y-4">
             {log.sets.map((set, setIndex) => (
               <div key={set.id} className="flex items-center space-x-2">
-                {/* Set ラベルに htmlFor を追加し、最初の input に id を設定 */}
                 <label
                   htmlFor={`weight-${exerciseIndex}-${setIndex}`}
                   className="w-10 text-right shrink-0 pr-2"
                 >{`Set ${setIndex + 1}`}</label>
+                {/* Weight Field */}
                 <Field.Root
                   name={`exercises[${exerciseIndex}].sets[${setIndex}].weight`}
                   className="flex-1"
                 >
                   <Field.Label className="sr-only">Weight</Field.Label>
                   <Field.Control
-                    id={`weight-${exerciseIndex}-${setIndex}`} // id を追加
+                    id={`weight-${exerciseIndex}-${setIndex}`}
                     type="number"
                     placeholder="Weight (kg)"
                     value={set.weight}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       handleInputChange(exerciseIndex, setIndex, "weight", e.target.value)
                     }
-                    className="w-full border p-2 rounded" // 簡易的なスタイル
+                    className="w-full border p-2 rounded"
                   />
-                  <Field.Error className="text-red-500 text-xs" /> {/* エラー表示 */}
+                  <Field.Error className="text-red-500 text-xs" />
                 </Field.Root>
                 {/* Reps Field */}
                 <Field.Root
@@ -163,35 +224,62 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       handleInputChange(exerciseIndex, setIndex, "reps", e.target.value)
                     }
-                    className="w-full border p-2 rounded" // 簡易的なスタイル
+                    className="w-full border p-2 rounded"
                   />
-                  <Field.Error className="text-red-500 text-xs" /> {/* エラー表示 */}
+                  <Field.Error className="text-red-500 text-xs" />
                 </Field.Root>
-                {/* RIR Field */}
-                <Field.Root
-                  name={`exercises[${exerciseIndex}].sets[${setIndex}].rir`}
-                  className="flex-1"
-                >
-                  <Field.Label className="sr-only">RIR</Field.Label>
-                  <Field.Control
-                    type="number"
-                    placeholder="RIR"
-                    value={set.rir}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleInputChange(exerciseIndex, setIndex, "rir", e.target.value)
-                    }
-                    className="w-full border p-2 rounded" // 簡易的なスタイル
-                    min="0"
-                  />
-                  <Field.Error className="text-red-500 text-xs" /> {/* エラー表示 */}
-                </Field.Root>
+
+                {/* RIR Field (条件付き表示) */}
+                {intensityMode === "rir" && (
+                  <Field.Root
+                    name={`exercises[${exerciseIndex}].sets[${setIndex}].rir`}
+                    className="flex-1"
+                  >
+                    <Field.Label className="sr-only">RIR</Field.Label>
+                    <Field.Control
+                      type="number"
+                      placeholder="RIR"
+                      value={set.rir}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(exerciseIndex, setIndex, "rir", e.target.value)
+                      }
+                      className="w-full border p-2 rounded"
+                      min="0"
+                      step="0.5" // RIRは0.5刻みも考慮
+                    />
+                    <Field.Error className="text-red-500 text-xs" />
+                  </Field.Root>
+                )}
+
+                {/* RPE Field (条件付き表示) */}
+                {intensityMode === "rpe" && (
+                  <Field.Root
+                    name={`exercises[${exerciseIndex}].sets[${setIndex}].rpe`}
+                    className="flex-1"
+                  >
+                    <Field.Label className="sr-only">RPE</Field.Label>
+                    <Field.Control
+                      type="number"
+                      placeholder="RPE"
+                      value={set.rpe}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleInputChange(exerciseIndex, setIndex, "rpe", e.target.value)
+                      }
+                      className="w-full border p-2 rounded"
+                      min="1"
+                      max="10"
+                      step="0.5" // RPEの範囲と刻み
+                    />
+                    <Field.Error className="text-red-500 text-xs" />
+                  </Field.Root>
+                )}
               </div>
             ))}
-            {/* ネイティブの button 要素に変更 */}
+            {/* セット追加ボタン */}
             <button
               type="button"
               onClick={() => handleAddSet(exerciseIndex)}
-              className="mt-2 border px-2 py-1 rounded text-sm" // 簡易的なスタイル
+              className="mt-2 border px-2 py-1 rounded text-sm"
             >
               セット追加
             </button>
@@ -199,15 +287,13 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
         </div>
       ))}
 
-      {/* TODO: エクササイズ追加ボタン (フリーワークアウト用) */}
-
-      {/* ネイティブの button 要素に変更 */}
+      {/* 送信ボタン */}
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700" // 簡易的なスタイル
+        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
       >
         ワークアウトを記録
       </button>
-    </Form>
+    </BaseForm>
   );
 }

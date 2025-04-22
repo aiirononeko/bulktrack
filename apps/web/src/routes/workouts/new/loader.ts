@@ -6,7 +6,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   console.log("Loader (route.tsx): Fetching menu list from API...");
   try {
     const env = context.cloudflare.env;
-    const baseUrl = env?.API_URL || "http://localhost:8080";
+    const baseUrl = env?.API_URL || "http://localhost:5555";
     const apiUrl = `${baseUrl}/menus`;
     console.log(`Loader (route.tsx): Using API URL: ${apiUrl}`); // 使用するURLをログ出力
 

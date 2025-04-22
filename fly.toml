@@ -10,7 +10,7 @@ primary_region = 'nrt'
   dockerfile = 'apps/api/Dockerfile'
 
 [http_service]
-  internal_port = 8080
+  internal_port = 5555
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true

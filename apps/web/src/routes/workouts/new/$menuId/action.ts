@@ -19,7 +19,7 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
 
     // Cloudflare環境変数からAPIのURLを取得
     const env = context.cloudflare.env;
-    const baseUrl = env?.API_URL || "http://localhost:8080";
+    const baseUrl = env?.API_URL || "http://localhost:5555";
     const apiUrl = `${baseUrl}/workouts`;
 
     console.log(`Using API URL: ${apiUrl}`);

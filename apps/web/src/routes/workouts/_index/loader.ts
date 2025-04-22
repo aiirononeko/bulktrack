@@ -5,7 +5,7 @@ import type { WorkoutApiResponse } from "./types";
 export async function loader({ context }: LoaderFunctionArgs) {
   try {
     const env = context.cloudflare.env;
-    const baseUrl = env?.API_URL || "http://localhost:8080";
+    const baseUrl = env?.API_URL || "http://localhost:5555";
     const apiUrl = `${baseUrl}/workouts`;
 
     console.log(`Fetching workouts from: ${apiUrl}`);

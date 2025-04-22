@@ -24,7 +24,7 @@ interface Menu {
 export async function loader({ context }: LoaderFunctionArgs) {
   try {
     // APIリクエスト
-    const apiUrl = `${context.cloudflare.env.API_URL || "http://localhost:8080"}/menus`;
+    const apiUrl = `${context.cloudflare.env.API_URL || "http://localhost:5555"}/menus`;
     const response = await fetch(apiUrl);
 
     if (!response.ok) {
