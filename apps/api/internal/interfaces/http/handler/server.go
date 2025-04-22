@@ -17,11 +17,12 @@ import (
 
 // Server はHTTPサーバーを表す
 type Server struct {
-	container      *di.Container
-	menuService    *service.MenuService
-	workoutService *service.WorkoutService
-	mux            *http.ServeMux
-	logger         *slog.Logger
+	container       *di.Container
+	menuService     *service.MenuService
+	workoutService  *service.WorkoutService
+	exerciseService *service.ExerciseService
+	mux             *http.ServeMux
+	logger          *slog.Logger
 }
 
 // NewServer は新しいHTTPサーバーを作成
@@ -29,13 +30,15 @@ func NewServer(container *di.Container) *Server {
 	// サービスの初期化
 	menuService := service.NewMenuService(container.DB, container.Logger)
 	workoutService := service.NewWorkoutService(container.DB, container.Logger)
+	exerciseService := service.NewExerciseService(container.DB, container.Logger)
 
 	s := &Server{
-		container:      container,
-		menuService:    menuService,
-		workoutService: workoutService,
-		mux:            http.NewServeMux(),
-		logger:         container.Logger,
+		container:       container,
+		menuService:     menuService,
+		workoutService:  workoutService,
+		exerciseService: exerciseService,
+		mux:             http.NewServeMux(),
+		logger:          container.Logger,
 	}
 
 	// ロギングミドルウェアを作成
@@ -57,6 +60,9 @@ func NewServer(container *di.Container) *Server {
 
 	// セット (ミドルウェアでラップ)
 	s.mux.Handle("PATCH /sets/{id}", logging(http.HandlerFunc(s.handleUpdateSet)))
+
+	// 種目 (追加)
+	s.mux.Handle("GET /exercises", logging(http.HandlerFunc(s.handleListExercises)))
 
 	return s
 }
@@ -305,4 +311,17 @@ func (s *Server) handleUpdateSet(w http.ResponseWriter, r *http.Request) {
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+// 種目一覧取得ハンドラー
+func (s *Server) handleListExercises(w http.ResponseWriter, r *http.Request) {
+	exercises, err := s.exerciseService.ListExercises(r.Context())
+	if err != nil {
+		s.logger.ErrorContext(r.Context(), "Failed to list exercises", slog.Any("error", err))
+		http.Error(w, "Failed to retrieve exercises", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(exercises)
 }

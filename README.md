@@ -8,38 +8,38 @@ BulkTrack は "筋肥大に必要な週次ボリューム管理" を、Apple Wat
 
 - **Track**：部位別・種目別・総セット数／総挙上量を自動集計し、カラーコードで "足りない／過多" を即判断。
 - **Bulk**：ダッシュボードには 「先週比 +12 % ↑」など漸進的加負荷が一目でわかるゲージ を搭載。
-- **UI**：デジタルクラウンだけで重量⇄rep を連続入力し、iPhone を取り出す必要がありません。
+- **UI**：デジタルクラウンだけで重量 ⇄rep を連続入力し、iPhone を取り出す必要がありません。
 - **クラウド連携**：iCloud Sync・CSV / Apple Health Export でコーチや研究用データにも即活用。
 
 ### 1-2. BulkTrack が "強い" 5 つの理由
 
-| 差別化ポイント | 既存アプリの状況 | BulkTrack の打ち手 |
-| -------------- | ---------------- | ------------------ |
-| ① 完全スタンドアロン watchOS | Strong は「Watch と iPhone の併用を推奨」 ストロングヘルプセンター | Watch 単体でログ完結。休憩タイマーも触覚通知のみで集中を切らさない |
-| ② 部位×週次ボリュームのリアルタイム可視化 | Fitbod も「Volume Targets」を導入したが "全身合計" 表示が中心 Fitbod | 筋群ごとに閾値を設定 → "胸 18 sets / 目標 20" をリングで表示 |
-| ③ Volume Guard™ 通知 | HeavySet は PR 通知中心で過剰ボリューム警告なし Apple | オーバーワーク警告 / 未達リマインダー を週中にプッシュ |
-| ④ Advanced Override (RIR/RPE・テンポ・ドロップセット) | Fitbod/Strong は一部 RPE のみ AppleFitbod | セット単位で RIR・テンポをクイック入力 → グラフに反映 |
-| ⑤ オープンデータ思想 | 多くが PRO 課金で CSV 解放 | CSV・Health Export 無料開放。研究者／オンラインコーチと連携容易 |
+| 差別化ポイント                                        | 既存アプリの状況                                                     | BulkTrack の打ち手                                                 |
+| ----------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| ① 完全スタンドアロン watchOS                          | Strong は「Watch と iPhone の併用を推奨」 ストロングヘルプセンター   | Watch 単体でログ完結。休憩タイマーも触覚通知のみで集中を切らさない |
+| ② 部位 × 週次ボリュームのリアルタイム可視化           | Fitbod も「Volume Targets」を導入したが "全身合計" 表示が中心 Fitbod | 筋群ごとに閾値を設定 → "胸 18 sets / 目標 20" をリングで表示       |
+| ③ Volume Guard™ 通知                                  | HeavySet は PR 通知中心で過剰ボリューム警告なし Apple                | オーバーワーク警告 / 未達リマインダー を週中にプッシュ             |
+| ④ Advanced Override (RIR/RPE・テンポ・ドロップセット) | Fitbod/Strong は一部 RPE のみ AppleFitbod                            | セット単位で RIR・テンポをクイック入力 → グラフに反映              |
+| ⑤ オープンデータ思想                                  | 多くが PRO 課金で CSV 解放                                           | CSV・Health Export 無料開放。研究者／オンラインコーチと連携容易    |
 
 ### 1-3. BulkTrack が創る世界
 
 > "ログはただの記録ではなく、リアルタイムのナビゲーションになる"
 
 1. データで語る筋トレ文化
-Weekly volume・RIR 推移が共通言語になり、SNS やオンラインコミュニティで「胸は 16 → 18 set で伸びた」など エビデンスベースの会話 が日常化。
+   Weekly volume・RIR 推移が共通言語になり、SNS やオンラインコミュニティで「胸は 16 → 18 set で伸びた」など エビデンスベースの会話 が日常化。
 2. コーチングの民主化
-CSV API を通じてオンラインコーチが即座にクライアントのボトルネックを分析。パーソナル指導のコストを 1/5 まで削減。
+   CSV API を通じてオンラインコーチが即座にクライアントのボトルネックを分析。パーソナル指導のコストを 1/5 まで削減。
 3. "オーバーワークゼロ" のジムライフ
-Volume Guard™ が過剰セットを自動警告。ケガや慢性疲労を未然に防ぎ、継続率と QOL を最大化。
+   Volume Guard™ が過剰セットを自動警告。ケガや慢性疲労を未然に防ぎ、継続率と QOL を最大化。
 
 ### 1-4. どんなユーザーをどう喜ばせるか
 
-| ペルソナ | Pain Point | BulkTrack が届ける Joy |
-| ------- | ---------- | ---------------------- |
-| 中上級トレーニー（週 5 日・1 回 90 分） | Excel 管理が煩雑／ボリュームの伸び停滞 | "胸+肩は+10 % / 脚は維持" を即判断 → 自己プログラミングが加速 |
-| 忙しいビジネスパーソン（昼休み 45 分） | iPhone 操作が面倒、セット抜け発生 | 腕時計をクルッと回すだけでログ → 1 分短縮／回、合計月 1 時間節約 |
-| オンラインコーチ | クライアントのフォーム動画は見れるが、細かいセット情報が遅い | リアルタイム CSV Webhook で即レビュー → 24 h 以内にフィードバック |
-| 研究者・理学療法士 | 大規模な筋肥大データ不足 | 無料で 匿名化 CSV が得られ、科学的知見の更新スピードが向上 |
+| ペルソナ                                | Pain Point                                                   | BulkTrack が届ける Joy                                            |
+| --------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| 中上級トレーニー（週 5 日・1 回 90 分） | Excel 管理が煩雑／ボリュームの伸び停滞                       | "胸+肩は+10 % / 脚は維持" を即判断 → 自己プログラミングが加速     |
+| 忙しいビジネスパーソン（昼休み 45 分）  | iPhone 操作が面倒、セット抜け発生                            | 腕時計をクルッと回すだけでログ → 1 分短縮／回、合計月 1 時間節約  |
+| オンラインコーチ                        | クライアントのフォーム動画は見れるが、細かいセット情報が遅い | リアルタイム CSV Webhook で即レビュー → 24 h 以内にフィードバック |
+| 研究者・理学療法士                      | 大規模な筋肥大データ不足                                     | 無料で 匿名化 CSV が得られ、科学的知見の更新スピードが向上        |
 
 ### 1-5. キーメッセージ（タグライン案）
 
@@ -52,12 +52,12 @@ BulkTrack は 「筋肥大 × データ × Apple Watch 体験」 を再発明し
 
 ## 2. 技術スタック
 
-| レイヤ | 技術スタック | デプロイ先 |
-| ------ | ------------ | ---------- |
+| レイヤ         | 技術スタック                                         | デプロイ先                     |
+| -------------- | ---------------------------------------------------- | ------------------------------ |
 | フロントエンド | React Router v7 (Framework Mode)、Vite、Tailwind CSS | **Cloudflare Workers / Pages** |
-| バックエンド | Go 1.24、Echo (REST)、sqlc | **Fly.io** |
-| データベース | **Neon (PostgreSQL)** | ― |
-| モノレポ管理 | **pnpm Workspaces** / **Go Workspace (`go.work`)** | ― |
+| バックエンド   | Go 1.24、Echo (REST)、sqlc                           | **Fly.io**                     |
+| データベース   | **Neon (PostgreSQL)**                                | ―                              |
+| モノレポ管理   | **pnpm Workspaces** / **Go Workspace (`go.work`)**   | ―                              |
 
 目的は「筋トレ記録アプリ」を題材に、**型安全**・**スキーマファースト**・**Serverless** を同時に検証することです。
 
@@ -75,7 +75,7 @@ BulkTrack は 「筋肥大 × データ × Apple Watch 体験」 を再発明し
       Cloudflare Pages ✧ CDN
 ```
 
-- **Edge SSR**: React Router v7 の *Framework Mode* を Workers 上でストリーミング SSR
+- **Edge SSR**: React Router v7 の _Framework Mode_ を Workers 上でストリーミング SSR
 - **API → DB**: Go API は Serverless PostgreSQL (Neon) と pgx/v5 で接続
 - **ビルド**: Vite + Bun / Go Releaser を GitHub Actions で自動化
 
@@ -148,7 +148,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 ```jsonc
 {
   "compilerOptions": {
-    "moduleResolution": "bundler",   // ★ 重要 – Workers 環境で Node built‑ins を除外
+    "moduleResolution": "bundler", // ★ 重要 – Workers 環境で Node built‑ins を除外
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "baseUrl": ".",
@@ -214,17 +214,17 @@ sqlc generate  # 型安全コード生成
 
 ## 8. 前提ツール
 
-| Tool | Min ver | 用途 |
-| ---- | ------- | ---- |
-| Node.js | 20.x | フロントエンドビルド |
-| pnpm | 9.x | モノレポ管理 |
-| Bun | 1.x | react‑router typegen 実行 |
-| Go | 1.24 | API サーバー |
-| Docker | ― | CI / Fly.io デプロイ |
-| flyctl | 1.x | Fly.io デプロイ |
-| wrangler | 3.x | Workers デプロイ |
-| sqlc | 1.x | DB コード生成 |
-| psql | 15+ | スキーマ適用 |
+| Tool     | Min ver | 用途                      |
+| -------- | ------- | ------------------------- |
+| Node.js  | 20.x    | フロントエンドビルド      |
+| pnpm     | 9.x     | モノレポ管理              |
+| Bun      | 1.x     | react‑router typegen 実行 |
+| Go       | 1.24    | API サーバー              |
+| Docker   | ―       | CI / Fly.io デプロイ      |
+| flyctl   | 1.x     | Fly.io デプロイ           |
+| wrangler | 3.x     | Workers デプロイ          |
+| sqlc     | 1.x     | DB コード生成             |
+| psql     | 15+     | スキーマ適用              |
 
 ---
 
@@ -243,7 +243,7 @@ cd apps/api
 cp .env.example .env         # DB 接続情報を設定
 source .env
 
-go run ./cmd/server          # localhost:8080
+go run ./cmd/server          # localhost:5555
 ```
 
 ### 9.3 DB スキーマ & コード生成
@@ -276,10 +276,10 @@ wrangler deploy              # wrangler.toml 使用
 
 ### 10.3 環境変数 (例)
 
-| Name | Example | Scope |
-| ---- | ------- | ----- |
+| Name         | Example                          | Scope       |
+| ------------ | -------------------------------- | ----------- |
 | DATABASE_URL | postgres://user:pwd@host:port/db | API / Local |
-| PORT | 8080 (Fly.io 注入) | API |
+| PORT         | 5555 (Fly.io 注入)               | API         |
 
 ---
 
@@ -307,8 +307,8 @@ source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
 
 ## 12. AI / Copilot 用プロンプト集
 
-| シナリオ | プロンプト例 | 補足 |
-| -------- | ------------ | ---- |
-| ルート雛形生成 | `"/posts/:slug" 用の React Router v7 ルート (TypeScript) を生成し、型は "+types/posts.$slug" を import してください。` | `import type` を明示すると誤 import を防げる |
-| Worker ハンドラ | `Cloudflare Workers の fetch ハンドラを createCloudflareHandler で実装し、streaming HTML を返すコードを出力して` | Node API 誤用を回避 |
-| tsconfig 修正 | `Cannot find module './+types/...' を解消する tsconfig 設定は?` | エラーメッセージ全文を貼る |
+| シナリオ        | プロンプト例                                                                                                           | 補足                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| ルート雛形生成  | `"/posts/:slug" 用の React Router v7 ルート (TypeScript) を生成し、型は "+types/posts.$slug" を import してください。` | `import type` を明示すると誤 import を防げる |
+| Worker ハンドラ | `Cloudflare Workers の fetch ハンドラを createCloudflareHandler で実装し、streaming HTML を返すコードを出力して`       | Node API 誤用を回避                          |
+| tsconfig 修正   | `Cannot find module './+types/...' を解消する tsconfig 設定は?`                                                        | エラーメッセージ全文を貼る                   |
