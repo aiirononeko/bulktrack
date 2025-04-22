@@ -41,6 +41,7 @@ export async function loader(args: Route.LoaderArgs) {
     const formattedMenus = menus.map((menu) => ({
       id: menu.id,
       name: menu.name,
+      description: menu.description,
       // 必要に応じて他のフィールドも追加
     }));
 

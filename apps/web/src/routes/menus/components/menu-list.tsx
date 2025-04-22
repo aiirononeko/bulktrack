@@ -29,7 +29,10 @@ export function MenuList({ menus }: MenuListProps) {
           className="block p-6 bg-card rounded-lg border hover:shadow-md transition-shadow duration-200"
         >
           <h3 className="text-lg font-semibold mb-2">{menu.name}</h3>
-          {/* 必要に応じてメニューの説明などを表示 */}
+          {/* Description を追加 */}
+          {menu.description && (
+            <p className="text-sm text-muted-foreground mt-1">{menu.description}</p>
+          )}
         </Link>
       ))}
     </div>

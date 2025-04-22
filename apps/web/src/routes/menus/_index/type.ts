@@ -3,6 +3,7 @@ export interface MenuApiResponse {
   id: string;
   user_id: string;
   name: string;
+  description?: string | null; // Optional description from API
   created_at: string;
   // menu_items も含める場合は追加
 }
@@ -11,4 +12,5 @@ export interface MenuApiResponse {
 export interface MenuSummary {
   id: string;
   name: string;
+  description?: string | null; // Optional description for display
 }

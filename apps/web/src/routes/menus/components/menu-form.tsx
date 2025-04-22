@@ -22,7 +22,7 @@ interface MenuItemState {
 }
 
 interface MenuFormProps {
-  initialData?: MenuDetail; // 編集時に初期データを渡す
+  initialData?: MenuDetail & { description?: string | null }; // description を追加
   isSubmitting?: boolean; // 送信中状態（必要なら）
   exercises: ExerciseOption[]; // exercises props を追加
 }
@@ -98,7 +98,7 @@ export function MenuForm({ initialData, isSubmitting, exercises }: MenuFormProps
 
     formData.append("items", JSON.stringify(itemsToSend));
 
-    // TODO: バリデーション (zodなど)
+    // Description は formData に自動で含まれる (name="description" のため)
 
     submit(formData, {
       method: initialData ? "patch" : "post", // 編集か新規かでメソッドを切り替え
@@ -126,6 +126,21 @@ export function MenuForm({ initialData, isSubmitting, exercises }: MenuFormProps
         />
         <Field.Error className="text-red-500 text-xs" />
       </Field.Root>
+
+      {/* Description Field (追加) */}
+      <div className="space-y-1">
+        <label htmlFor="menu-description" className="block text-sm font-medium text-gray-700">
+          メニュー説明 (任意)
+        </label>
+        <textarea
+          id="menu-description"
+          name="description" // name 属性を設定
+          defaultValue={initialData?.description || ""} // 編集時の初期値
+          placeholder="例: ベンチプレスの重量を伸ばすことに重点"
+          className="w-full border p-2 rounded min-h-[80px]" // スタイル調整
+          rows={3} // 表示行数の目安
+        />
+      </div>
 
       {/* メニュー項目セクション */}
       <div className="space-y-4">

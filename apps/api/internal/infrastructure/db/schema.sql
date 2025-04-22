@@ -31,6 +31,7 @@ CREATE TABLE menus (
   id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id    TEXT NOT NULL, -- UUID REFERENCES users(id) ON DELETE CASCADE から変更
   name       TEXT NOT NULL,
+  description TEXT NULL,
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE (user_id, name)
 );

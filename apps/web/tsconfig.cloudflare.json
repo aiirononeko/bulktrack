@@ -8,6 +8,10 @@
     "workers/**/*",
     "worker-configuration.d.ts"
   ],
+  "exclude": [
+    "src/routes/menus.new/**/*",
+    "src/routes/workouts.$id/**/*"
+  ],
   "compilerOptions": {
     "composite": true,
     "strict": true,

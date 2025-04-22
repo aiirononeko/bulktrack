@@ -9,29 +9,32 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createMenu = `-- name: CreateMenu :one
 INSERT INTO menus (
-  user_id, name
+  user_id, name, description
 ) VALUES (
-  $1::text, $2
+  $1::text, $2, $3
 )
-RETURNING id, user_id, name, created_at
+RETURNING id, user_id, name, description, created_at
 `
 
 type CreateMenuParams struct {
-	UserID string `json:"user_id"`
-	Name   string `json:"name"`
+	UserID      string      `json:"user_id"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
 }
 
 func (q *Queries) CreateMenu(ctx context.Context, arg CreateMenuParams) (Menu, error) {
-	row := q.db.QueryRow(ctx, createMenu, arg.UserID, arg.Name)
+	row := q.db.QueryRow(ctx, createMenu, arg.UserID, arg.Name, arg.Description)
 	var i Menu
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.Name,
+		&i.Description,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -48,7 +51,8 @@ func (q *Queries) DeleteMenu(ctx context.Context, id uuid.UUID) error {
 }
 
 const getMenu = `-- name: GetMenu :one
-SELECT id, user_id, name, created_at FROM menus
+SELECT id, user_id, name, description, created_at
+FROM menus
 WHERE id = $1 LIMIT 1
 `
 
@@ -59,13 +63,15 @@ func (q *Queries) GetMenu(ctx context.Context, id uuid.UUID) (Menu, error) {
 		&i.ID,
 		&i.UserID,
 		&i.Name,
+		&i.Description,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listMenusByUser = `-- name: ListMenusByUser :many
-SELECT id, user_id, name, created_at FROM menus
+SELECT id, user_id, name, description, created_at
+FROM menus
 WHERE user_id = $1::text
 ORDER BY created_at DESC
 `
@@ -83,6 +89,7 @@ func (q *Queries) ListMenusByUser(ctx context.Context, userID string) ([]Menu, e
 			&i.ID,
 			&i.UserID,
 			&i.Name,
+			&i.Description,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -97,23 +104,27 @@ func (q *Queries) ListMenusByUser(ctx context.Context, userID string) ([]Menu, e
 
 const updateMenu = `-- name: UpdateMenu :one
 UPDATE menus
-SET name = $2
-WHERE id = $1
-RETURNING id, user_id, name, created_at
+SET
+  name = $1,
+  description = $2
+WHERE id = $3
+RETURNING id, user_id, name, description, created_at
 `
 
 type UpdateMenuParams struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+	Name        string      `json:"name"`
+	Description pgtype.Text `json:"description"`
+	ID          uuid.UUID   `json:"id"`
 }
 
 func (q *Queries) UpdateMenu(ctx context.Context, arg UpdateMenuParams) (Menu, error) {
-	row := q.db.QueryRow(ctx, updateMenu, arg.ID, arg.Name)
+	row := q.db.QueryRow(ctx, updateMenu, arg.Name, arg.Description, arg.ID)
 	var i Menu
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.Name,
+		&i.Description,
 		&i.CreatedAt,
 	)
 	return i, err

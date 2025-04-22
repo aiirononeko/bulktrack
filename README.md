@@ -312,3 +312,38 @@ source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
 | ルート雛形生成  | `"/posts/:slug" 用の React Router v7 ルート (TypeScript) を生成し、型は "+types/posts.$slug" を import してください。` | `import type` を明示すると誤 import を防げる |
 | Worker ハンドラ | `Cloudflare Workers の fetch ハンドラを createCloudflareHandler で実装し、streaming HTML を返すコードを出力して`       | Node API 誤用を回避                          |
 | tsconfig 修正   | `Cannot find module './+types/...' を解消する tsconfig 設定は?`                                                        | エラーメッセージ全文を貼る                   |
+
+## 認証・認可 (Authentication & Authorization)
+
+本アプリケーションでは、認証・認可基盤として [Clerk](https://clerk.com/) を全面的に採用しています。Clerk の利用により、堅牢な認証フローとユーザー管理機能を迅速に導入しています。
+
+### フロントエンド (React Router + Cloudflare Workers)
+
+- **Clerk SDK:** `@clerk/remix` (React Router v7 Framework Mode との互換性) を利用し、サインイン・サインアップ、ユーザープロファイル管理などの UI コンポーネントを組み込んでいます。
+- **認証状態管理:** `useAuth`, `useUser` フックを使用して、クライアントサイドでの認証状態やユーザー情報を取得します。
+- **API 認証:**
+  - React Router の `loader` や `action` 関数内で `clerkClient.getToken()` を呼び出し、Clerk が発行した JWT (JSON Web Token) を取得します。
+  - 取得した JWT を `Authorization: Bearer <token>` ヘッダーに付与して、バックエンド API へのリクエストを行います。
+
+### バックエンド (Go API on Fly.io)
+
+- **JWT 検証ミドルウェア:**
+  - フロントエンドから送信された `Authorization` ヘッダー内の JWT を受け取ります。
+  - `apps/api/internal/interfaces/http/middleware/auth.go` (または同様のミドルウェア) で、Clerk の公開鍵 (JWKS) を用いて JWT の署名と有効期限を検証します。
+  - 検証に成功した場合、トークンのペイロードから Clerk User ID (`user_` プレフィックス付きの文字列) を抽出します。
+- **ユーザー識別:**
+  - 抽出した Clerk User ID をリクエストコンテキストに格納します。
+  - 各 API ハンドラは、コンテキストから User ID を取得し、リソースへのアクセス制御やデータフィルタリングを行います。
+- **ユーザー情報の Single Source of Truth:** データベースには `users` テーブルを持たず、Clerk 上のユーザー情報を信頼できる唯一の情報源 (Single Source of Truth) としています。バックエンド全体で Clerk User ID (文字列型) をユーザー識別子として扱います。
+
+```
+psql "postgresql://neondb_owner:npg_DnFTk9d5mIzV@ep-square-boat-a1vteajv-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" -c "DROP TABLE IF EXISTS sets CASCADE; DROP TABLE IF EXISTS workouts CASCADE; DROP TABLE IF EXISTS menu_items CASCADE; DROP TABLE IF EXISTS menus CASCADE; DROP TABLE IF EXISTS exercise_target_muscle_groups CASCADE; DROP TABLE IF EXISTS exercises CASCADE; DROP TABLE IF EXISTS muscle_groups CASCADE;"
+```
+
+```
+psql "postgresql://neondb_owner:npg_DnFTk9d5mIzV@ep-square-boat-a1vteajv-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" -f internal/infrastructure/db/schema.sql
+```
+
+```
+psql "postgresql://neondb_owner:npg_DnFTk9d5mIzV@ep-square-boat-a1vteajv-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" -f internal/infrastructure/db/seed.sql
+```

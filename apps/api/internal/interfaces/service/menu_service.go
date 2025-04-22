@@ -12,6 +12,27 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// --- ヘルパー関数 (ファイルスコープなどに追加) ---
+func ptrStringToPgtypeText(s *string) pgtype.Text {
+	if s == nil || *s == "" { // 空文字列も NULL として扱う場合
+		return pgtype.Text{Valid: false}
+	}
+	return pgtype.Text{String: *s, Valid: true}
+}
+
+func pgtypeTextToPtrString(pt pgtype.Text) *string {
+	if !pt.Valid {
+		return nil
+	}
+	// 空文字列を返すか nil を返すか、仕様による
+	// if pt.String == "" {
+	//  return nil
+	// }
+	return &pt.String
+}
+
+// -------------------------------------------
+
 // MenuService はメニュー関連のサービスを提供する
 type MenuService struct {
 	pool    *pgxpool.Pool
@@ -30,6 +51,11 @@ func NewMenuService(pool *pgxpool.Pool, logger *slog.Logger) *MenuService {
 
 // CreateMenu は新しいメニューを作成する
 func (s *MenuService) CreateMenu(ctx context.Context, req dto.CreateMenuRequest, userID string) (*dto.MenuResponse, error) {
+	// --- 追加: DTO から pgtype.Text への変換 ---
+	pgDescription := ptrStringToPgtypeText(req.Description)
+	// s.logger.Debug("Converted description", slog.Any("pgtype_text", pgDescription)) // デバッグログ削除
+	// -----------------------------------------
+
 	// トランザクション開始
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -51,15 +77,20 @@ func (s *MenuService) CreateMenu(ctx context.Context, req dto.CreateMenuRequest,
 
 	qtx := sqlc.New(tx)
 
-	// メニュー作成
-	menu, err := qtx.CreateMenu(ctx, sqlc.CreateMenuParams{
-		UserID: userID,
-		Name:   req.Name,
-	})
+	// --- 修正: sqlc.CreateMenuParams に Description をセット ---
+	params := sqlc.CreateMenuParams{
+		UserID:      userID,
+		Name:        req.Name,
+		Description: pgDescription, // 変換した値をセット
+	}
+	// s.logger.Debug("Calling qtx.CreateMenu with params", slog.Any("params", params)) // デバッグログ削除
+	menu, err := qtx.CreateMenu(ctx, params)
+	// -------------------------------------------------------
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute CreateMenu query", slog.Any("error", err), slog.String("user_id", userID), slog.String("menu_name", req.Name))
+		s.logger.ErrorContext(ctx, "Failed to execute CreateMenu query", slog.Any("error", err), slog.String("user_id", userID), slog.Any("params", params))
 		return nil, err
 	}
+	// s.logger.Debug("Menu created in DB", slog.Any("db_menu", menu)) // デバッグログ削除
 
 	// メニュー項目作成
 	items := make([]dto.MenuItemView, 0, len(req.Items))
@@ -133,13 +164,17 @@ func (s *MenuService) CreateMenu(ctx context.Context, req dto.CreateMenuRequest,
 		return nil, err
 	}
 
-	// レスポンス作成
+	// --- 修正: レスポンス DTO に Description をセット ---
+	responseDescription := pgtypeTextToPtrString(menu.Description)
+	// s.logger.Debug("Setting response description", slog.String("description", fmt.Sprintf("%v", responseDescription))) // デバッグログ削除
 	return &dto.MenuResponse{
-		ID:        menu.ID,
-		Name:      menu.Name,
-		CreatedAt: menu.CreatedAt.Time.Format(time.RFC3339),
-		Items:     items,
+		ID:          menu.ID,
+		Name:        menu.Name,
+		Description: responseDescription,
+		CreatedAt:   menu.CreatedAt.Time.Format(time.RFC3339),
+		Items:       items,
 	}, nil
+	// ------------------------------------------------
 }
 
 // GetMenuWithItems はメニューとその項目を取得する
@@ -186,12 +221,13 @@ func (s *MenuService) GetMenuWithItems(ctx context.Context, menuID uuid.UUID) (*
 		items = append(items, itemView)
 	}
 
-	// レスポンス作成
+	// レスポンス作成 (Description を追加)
 	return &dto.MenuResponse{
-		ID:        menu.ID,
-		Name:      menu.Name,
-		CreatedAt: menu.CreatedAt.Time.Format(time.RFC3339),
-		Items:     items,
+		ID:          menu.ID,
+		Name:        menu.Name,
+		Description: pgtypeTextToPtrString(menu.Description), // DB から取得した値を変換してセット
+		CreatedAt:   menu.CreatedAt.Time.Format(time.RFC3339),
+		Items:       items,
 	}, nil
 }
 
@@ -258,7 +294,7 @@ func (s *MenuService) ListMenusByUser(ctx context.Context, userID string) ([]dto
 		menuItems, err := s.queries.ListMenuItemsByMenu(ctx, pgMenuID)
 		if err != nil {
 			s.logger.ErrorContext(ctx, "Failed to execute ListMenuItemsByMenu query for a menu in ListMenusByUser", slog.Any("error", err), slog.String("menu_id", menu.ID.String()), slog.String("user_id", userID))
-			return nil, err
+			return nil, err // エラー時は早期リターン
 		}
 
 		// DTOに変換
@@ -286,11 +322,13 @@ func (s *MenuService) ListMenusByUser(ctx context.Context, userID string) ([]dto
 			items = append(items, itemView)
 		}
 
+		// レスポンスに追加 (Description を追加)
 		result = append(result, dto.MenuResponse{
-			ID:        menu.ID,
-			Name:      menu.Name,
-			CreatedAt: menu.CreatedAt.Time.Format(time.RFC3339),
-			Items:     items,
+			ID:          menu.ID,
+			Name:        menu.Name,
+			Description: pgtypeTextToPtrString(menu.Description), // DB から取得した値を変換してセット
+			CreatedAt:   menu.CreatedAt.Time.Format(time.RFC3339),
+			Items:       items,
 		})
 	}
 

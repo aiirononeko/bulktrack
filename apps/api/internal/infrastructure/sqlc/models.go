@@ -24,10 +24,11 @@ type ExerciseTargetMuscleGroup struct {
 }
 
 type Menu struct {
-	ID        uuid.UUID          `json:"id"`
-	UserID    string             `json:"user_id"`
-	Name      string             `json:"name"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	ID          uuid.UUID          `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
 type MenuItem struct {

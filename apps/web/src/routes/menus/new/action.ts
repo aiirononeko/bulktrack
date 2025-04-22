@@ -26,7 +26,8 @@ export async function action(args: Route.ActionArgs) {
 
   const formData = await args.request.formData();
   const menuName = formData.get("name") as string;
-  const itemsJson = formData.get("items") as string | null; // items を JSON 文字列として取得
+  const descriptionRaw = formData.get("description"); // まずそのまま取得
+  const itemsJson = formData.get("items") as string | null;
 
   if (!menuName) {
     return { error: "メニュー名は必須です。" };
@@ -49,13 +50,22 @@ export async function action(args: Route.ActionArgs) {
     // return { error: "メニュー項目は少なくとも1つ必要です。" };
   }
 
-  console.log("Creating menu:", { name: menuName, items }); // 送信するデータを確認
+  // description が空文字列や null の場合は null に変換
+  const description =
+    typeof descriptionRaw === "string" && descriptionRaw.trim() !== ""
+      ? descriptionRaw.trim()
+      : null;
+
+  console.log("Creating menu object:", { name: menuName, description, items }); // 送信するデータを確認
 
   try {
+    const payload = { name: menuName, description, items }; // description をペイロードに含める
+    const bodyString = JSON.stringify(payload); // 文字列化
+
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ name: menuName, items }), // name と items を送信
+      body: bodyString, // 文字列化した body を使用
     });
 
     if (!response.ok) {
