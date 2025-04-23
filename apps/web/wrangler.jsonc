@@ -8,7 +8,11 @@
 	"compatibility_date": "2025-04-04",
 	"main": "./workers/app.ts",
 	"vars": {
-		"API_URL": "https://bulktrack-api.fly.dev"
+		"API_URL": "https://bulktrack-api.fly.dev",
+		"CLERK_SIGN_IN_URL": "/signin",
+		"CLERK_SIGN_IN_FALLBACK_REDIRECT_URL": "/",
+		"CLERK_SIGN_UP_URL": "/signup",
+		"CLERK_SIGN_UP_FALLBACK_REDIRECT_URL": "/"
 	},
 	"observability": {
 		"enabled": true

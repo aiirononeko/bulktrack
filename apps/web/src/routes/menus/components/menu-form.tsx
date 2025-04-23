@@ -9,6 +9,7 @@ import type { MenuDetail } from "./types"; // 作成した型定義ファイル�
 interface ExerciseOption {
   id: string;
   name: string;
+  description: string;
 }
 
 // メニュー項目の型定義 (バックエンドの MenuItemInput に合わせる)
