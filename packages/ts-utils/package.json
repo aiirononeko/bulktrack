@@ -1,0 +1,26 @@
+{
+  "name": "ts-utils",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clerk/react-router": "^1.2.8",
+    "react-router": "^7.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+} 

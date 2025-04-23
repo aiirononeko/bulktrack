@@ -1,81 +1,59 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
 
-import { apiFetch } from "~/lib/api-client";
-import type { Route } from "./+types/route";
+import { type MenuCreateRequest, createMenu } from "~/lib/api";
 
-interface MenuItemToSend {
-  exercise_id: string;
-  set_order: number;
-  planned_sets: number | null;
-  planned_reps: number | null;
-  planned_interval_seconds: number | null;
-}
+import type { Route } from "./+types/route";
+import { type FormErrors, MenuFormSchema, toMenuCreateRequest } from "./schema";
 
 export async function action(args: Route.ActionArgs) {
+  // 認証チェック
   const { userId } = await getAuth(args);
   if (!userId) {
     return redirect(`/signin?redirect_url=${args.request.url}`);
   }
 
+  // フォームデータの取得
   const formData = await args.request.formData();
-  const menuName = formData.get("name") as string;
-  const descriptionRaw = formData.get("description");
-  const itemsJson = formData.get("items") as string | null;
+  const formValues = Object.fromEntries(formData);
 
-  if (!menuName) {
-    return { error: "メニュー名は必須です。" };
+  // Zodを使ったバリデーション
+  const result = MenuFormSchema.safeParse(formValues);
+
+  if (!result.success) {
+    // バリデーションエラーの場合はエラーメッセージを返す
+    const errors: FormErrors = {};
+    const formattedErrors = result.error.format();
+
+    // フィールド別のエラーメッセージを抽出
+    if (formattedErrors.name?._errors) errors.name = formattedErrors.name._errors;
+    if (formattedErrors.description?._errors)
+      errors.description = formattedErrors.description._errors;
+    if (formattedErrors.items?._errors) errors.items = formattedErrors.items._errors;
+
+    return { errors };
   }
-
-  let items: MenuItemToSend[] = [];
-  if (itemsJson) {
-    try {
-      items = JSON.parse(itemsJson); // JSON 文字列をパース
-      // TODO: パース後のデータバリデーション (zodなど)
-      if (!Array.isArray(items)) {
-        throw new Error("Items data is not an array");
-      }
-    } catch (e) {
-      console.error("Failed to parse items JSON:", e);
-      return { error: "メニュー項目のデータの形式が不正です。" };
-    }
-  } else {
-    // items が空の場合の処理 (空のメニューを許可しない場合はここでエラー)
-    // return { error: "メニュー項目は少なくとも1つ必要です。" };
-  }
-
-  // description が空文字列や null の場合は null に変換
-  const description =
-    typeof descriptionRaw === "string" && descriptionRaw.trim() !== ""
-      ? descriptionRaw.trim()
-      : null;
 
   try {
-    const payload = { name: menuName, description, items }; // description をペイロードに含める
-    const bodyString = JSON.stringify(payload); // 文字列化
+    // バリデーション済みデータをAPI用のリクエストデータに変換
+    const menuData: MenuCreateRequest = toMenuCreateRequest(result.data);
 
-    const response = await apiFetch(args, "/menus", {
-      method: "POST",
-      body: bodyString, // 文字列化した body を使用
-    });
-
-    if (!response.ok) {
-      let errorMessage = "メニューの作成に失敗しました。";
-      try {
-        const errorBody = (await response.json()) as { message?: string };
-        errorMessage = errorBody.message || errorMessage;
-      } catch (e) {
-        /* ignore json parsing error */
-      }
-      console.error(`API Error (${response.status}): ${errorMessage}`);
-      return { error: errorMessage };
-    }
+    // APIクライアントを使用してメニューを作成
+    await createMenu(args, menuData);
 
     // 成功時はメニュー一覧にリダイレクト
-    console.log("Menu created successfully, redirecting to /menus");
     return redirect("/menus");
   } catch (error) {
     console.error("Error creating menu:", error);
-    return { error: "メニューの作成中に予期せぬエラーが発生しました。" };
+
+    // エラーメッセージを生成
+    const errorMessage =
+      error instanceof Error
+        ? `メニューの作成に失敗しました: ${error.message}`
+        : "メニューの作成中に予期せぬエラーが発生しました。";
+
+    return {
+      errors: { _form: [errorMessage] },
+    };
   }
 }

@@ -7,6 +7,7 @@ import { loader } from "./loader";
 
 export default function NewMenuRoute() {
   const { exercises } = useLoaderData<typeof loader>();
+
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 

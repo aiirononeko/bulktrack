@@ -1,6 +1,6 @@
 import { Link, useLoaderData } from "react-router";
 
-import { MenuList } from "../components/menu-list";
+import { MenuList } from "./components/menu-list";
 
 import { loader } from "./loader";
 

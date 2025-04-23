@@ -3,6 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"prebuild": "cd ../../packages/ts-utils && pnpm build",
 		"build": "react-router build",
 		"cf-typegen": "wrangler types",
 		"deploy": "pnpm run build && wrangler deploy",
@@ -22,6 +23,7 @@
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-router": "^7.5.0",
+		"ts-utils": "workspace:*",
 		"uuid": "^11.1.0",
 		"zod": "^3.24.3"
 	},

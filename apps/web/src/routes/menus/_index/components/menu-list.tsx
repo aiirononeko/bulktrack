@@ -1,8 +1,8 @@
 import { Link } from "react-router";
-import type { MenuSummary } from "../_index/types";
+import type { Menu } from "ts-utils";
 
 interface MenuListProps {
-  menus: MenuSummary[];
+  menus: Menu[];
 }
 
 export function MenuList({ menus }: MenuListProps) {
