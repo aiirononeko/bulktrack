@@ -40,6 +40,7 @@ React Router v7では、関心の分離に基づいて以下のようにファ�
       /route.tsx       # メインのルートコンポーネント
       /loader.ts       # データ取得ロジック
       /action.ts       # データ変更ロジック
+      /schema.ts       # Zodスキーマ定義
       /$subRoute/      # ネストされたルート
       /components/     # このルート専用のコンポーネント
       /types.ts        # 型定義
@@ -114,6 +115,167 @@ React Router v7では、関心の分離に基づいて以下のようにファ�
   const env = context.cloudflare.env;
   const baseUrl = env?.API_URL || "http://localhost:5555";
   ```
+
+## 実装パターン例
+
+以下のパターンは、プロジェクト内で標準とするコード実装パターンです。
+
+### 一覧取得パターン（メニュー一覧の例）
+
+```typescript
+// routes/menus/_index/loader.ts
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { redirect } from "react-router";
+import { getMenus } from "~/lib/api";
+import type { Route } from "./+types/route";
+
+export async function loader(args: Route.LoaderArgs) {
+  // 認証チェック
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return redirect(`/signin?redirect_url=${args.request.url}`);
+  }
+
+  try {
+    // 型安全なAPI呼び出し
+    const menus = await getMenus(args);
+    return { menus };
+  } catch (error) {
+    console.error("Error fetching menus:", error);
+    return { menus: [] };
+  }
+}
+```
+
+### 作成フォーム処理パターン（Zodバリデーション）
+
+1. **schema.ts**：バリデーションと型変換を担当
+
+```typescript
+// routes/menus/new/schema.ts
+import { z } from "zod";
+import type { MenuCreateRequest } from "~/lib/api";
+
+// フォーム入力の種目アイテムの型定義
+export interface MenuItemInput {
+  exercise_id: string;
+  set_order: number;
+  planned_sets: number | null;
+  planned_reps: number | null;
+  planned_interval_seconds: number | null;
+}
+
+// フォームから送信されるデータのスキーマ
+export const MenuFormSchema = z.object({
+  name: z.string().min(1, "メニュー名は必須です"),
+  description: z.string().optional(),
+  items: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return [] as MenuItemInput[];
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed as MenuItemInput[] : [] as MenuItemInput[];
+      } catch {
+        throw new Error("メニュー項目のデータの形式が不正です");
+      }
+    }),
+});
+
+// バリデーション後のデータ型
+export type MenuFormData = z.infer<typeof MenuFormSchema>;
+
+// APIリクエストデータに変換する関数
+export function toMenuCreateRequest(formData: MenuFormData): MenuCreateRequest {
+  const { name, description, items } = formData;
+  
+  // 種目データをAPIの形式に変換
+  const exercises = items.map((item: MenuItemInput) => ({
+    exercise_id: item.exercise_id,
+    position: item.set_order,
+    sets: item.planned_sets || undefined,
+    reps: item.planned_reps || undefined,
+    rest_time: item.planned_interval_seconds || undefined,
+  }));
+  
+  return {
+    name,
+    description,
+    exercises: exercises.length > 0 ? exercises : undefined,
+  };
+}
+
+// エラーメッセージの型
+export type FormErrors = {
+  name?: string[];
+  description?: string[];
+  items?: string[];
+  _form?: string[];
+};
+```
+
+2. **action.ts**：フォーム送信処理を担当
+
+```typescript
+// routes/menus/new/action.ts
+import { getAuth } from "@clerk/react-router/ssr.server";
+import { redirect } from "react-router";
+
+import { type MenuCreateRequest, createMenu } from "~/lib/api";
+import type { Route } from "./+types/route";
+import { MenuFormSchema, toMenuCreateRequest, type FormErrors } from "./schema";
+
+export async function action(args: Route.ActionArgs) {
+  // 認証チェック
+  const { userId } = await getAuth(args);
+  if (!userId) {
+    return redirect(`/signin?redirect_url=${args.request.url}`);
+  }
+
+  // フォームデータの取得
+  const formData = await args.request.formData();
+  const formValues = Object.fromEntries(formData);
+  
+  // Zodを使ったバリデーション
+  const result = MenuFormSchema.safeParse(formValues);
+  
+  if (!result.success) {
+    // バリデーションエラーの場合はエラーメッセージを返す
+    const errors: FormErrors = {};
+    const formattedErrors = result.error.format();
+    
+    // フィールド別のエラーメッセージを抽出
+    if (formattedErrors.name?._errors) errors.name = formattedErrors.name._errors;
+    if (formattedErrors.description?._errors) errors.description = formattedErrors.description._errors;
+    if (formattedErrors.items?._errors) errors.items = formattedErrors.items._errors;
+    
+    return { errors };
+  }
+  
+  try {
+    // バリデーション済みデータをAPI用のリクエストデータに変換
+    const menuData: MenuCreateRequest = toMenuCreateRequest(result.data);
+    
+    // APIクライアントを使用してメニューを作成
+    await createMenu(args, menuData);
+    
+    // 成功時はメニュー一覧にリダイレクト
+    return redirect("/menus");
+  } catch (error) {
+    console.error("Error creating menu:", error);
+    
+    // エラーメッセージを生成
+    const errorMessage = error instanceof Error 
+      ? `メニューの作成に失敗しました: ${error.message}`
+      : "メニューの作成中に予期せぬエラーが発生しました。";
+    
+    return { 
+      errors: { _form: [errorMessage] } 
+    };
+  }
+}
+```
 
 ## ローカル開発
 

@@ -1,6 +1,15 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
-// LoaderFunctionArgs の型をインポート（必要に応じてパス調整）
 import type { LoaderFunctionArgs } from "react-router";
+
+/**
+ * API通信に関連するエラー
+ */
+export class APIError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "APIError";
+  }
+}
 
 export async function apiFetch(
   args: LoaderFunctionArgs,

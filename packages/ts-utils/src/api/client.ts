@@ -9,7 +9,7 @@ import type { ApiErrorResponse } from "./types";
 export type ApiClientContext =
   | LoaderFunctionArgs
   | ActionFunctionArgs
-  | { request: Request; context?: any };
+  | { request: Request; context?: { cloudflare?: { env?: Record<string, string> } } };
 
 /**
  * API URLを取得する

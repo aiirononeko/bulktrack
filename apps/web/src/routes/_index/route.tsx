@@ -1,15 +1,11 @@
 import { Link, useLoaderData } from "react-router";
 
 import { VolumeDashboard } from "./components/volume-dashboard";
-import { weeklyVolumeLoader } from "./loader";
-import type { WeeklyVolume } from "./types";
 
-export { weeklyVolumeLoader as loader };
+import { loader } from "./loader";
 
 export default function Component() {
-  const { weeklyVolumes } = useLoaderData() as {
-    weeklyVolumes: WeeklyVolume[];
-  };
+  const { weeklyVolumes } = useLoaderData<typeof loader>();
 
   return (
     <div className="pt-4 px-4 space-y-6 max-w-screen-lg mx-auto pb-12">
@@ -49,3 +45,5 @@ export default function Component() {
     </div>
   );
 }
+
+export { loader };

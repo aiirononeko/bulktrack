@@ -1,17 +1,20 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
+import { z } from "zod";
 
-import { apiFetch } from "~/lib/api-client";
+import { APIError, apiFetch } from "~/lib/api-client";
 import type { Route } from "./+types/route";
-import type { WorkoutApiResponse } from "./types";
+import { WorkoutApiSchema, formatWorkoutsFromApi } from "./schema";
 
 export async function loader(args: Route.LoaderArgs) {
+  // 認証チェック
   const { userId } = await getAuth(args);
   if (!userId) {
     return redirect(`/signin?redirect_url=${args.request.url}`);
   }
 
   try {
+    // APIからワークアウト一覧を取得
     const response = await apiFetch(args, "/workouts");
 
     if (!response.ok) {
@@ -25,28 +28,28 @@ export async function loader(args: Route.LoaderArgs) {
         // JSONパース失敗
       }
 
-      // エラー時は空の配列を返す
-      return { workouts: [] };
+      throw new APIError("ワークアウト一覧の取得に失敗しました");
     }
 
-    // APIレスポンスを取得
-    const workouts = (await response.json()) as WorkoutApiResponse[];
-    console.log("Successfully fetched workouts:", workouts);
+    // APIレスポンスを取得して検証
+    const data = await response.json();
+    const workoutsResult = z.array(WorkoutApiSchema).safeParse(data);
 
-    // クライアント側で日付のフォーマットを調整
-    const formattedWorkouts = workouts.map((workout) => ({
-      id: workout.id,
-      title: workout.menu_name,
-      date: new Date(workout.started_at).toLocaleDateString("ja-JP", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-    }));
+    if (!workoutsResult.success) {
+      console.error("API response validation failed:", workoutsResult.error);
+      throw new APIError("APIレスポンスの形式が正しくありません");
+    }
 
+    // フォーマット済みのワークアウト一覧を返す
+    const formattedWorkouts = formatWorkoutsFromApi(workoutsResult.data);
     return { workouts: formattedWorkouts };
   } catch (error) {
     console.error("Error fetching workouts:", error);
-    return { workouts: [] };
+
+    if (error instanceof APIError) {
+      throw error;
+    }
+
+    throw new APIError("ワークアウト一覧の取得中にエラーが発生しました");
   }
 }
