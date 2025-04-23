@@ -237,6 +237,13 @@ func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// デバッグログ：リクエスト情報
+	s.logger.InfoContext(r.Context(), "StartWorkout request received",
+		slog.String("user_id", userIDStr),
+		slog.String("path", r.URL.Path),
+		slog.String("method", r.Method),
+		slog.String("content_type", r.Header.Get("Content-Type")))
+
 	// リクエストボディの読み取り
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -246,27 +253,78 @@ func (s *Server) handleStartWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	// デバッグログ：リクエストボディ
+	s.logger.InfoContext(r.Context(), "StartWorkout request body",
+		slog.String("user_id", userIDStr),
+		slog.String("body", string(body)))
+
 	// リクエストのパース
 	var req dto.CreateWorkoutRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		s.logger.Error("Failed to unmarshal request body for start workout", slog.Any("error", err), slog.String("body", string(body)))
+		s.logger.Error("Failed to unmarshal request body for start workout",
+			slog.Any("error", err),
+			slog.String("body", string(body)))
 		http.Error(w, "Invalid request format", http.StatusBadRequest)
 		return
 	}
+
+	// デバッグログ：パース後のリクエスト
+	exercisesCount := 0
+	setsCount := 0
+	if req.Exercises != nil {
+		exercisesCount = len(req.Exercises)
+		for _, exercise := range req.Exercises {
+			if exercise.Sets != nil {
+				setsCount += len(exercise.Sets)
+			}
+		}
+	}
+
+	s.logger.InfoContext(r.Context(), "StartWorkout parsed request",
+		slog.String("user_id", userIDStr),
+		slog.String("menu_id", req.MenuID.String()),
+		slog.Int("exercises_count", exercisesCount),
+		slog.Int("total_sets_count", setsCount),
+		slog.String("note_length", fmt.Sprintf("%d", len(req.Note))))
 
 	// ワークアウト開始 (userIDStr を渡す)
 	// 注意: StartWorkout のシグネチャも変更が必要
 	resp, err := s.workoutService.StartWorkout(r.Context(), req, userIDStr)
 	if err != nil {
 		// userID.String() ではなく userIDStr をログに出力
-		s.logger.Error("Failed to start workout", slog.Any("error", err), slog.String("user_id", userIDStr), slog.Any("request", req))
+		s.logger.Error("Failed to start workout",
+			slog.Any("error", err),
+			slog.String("user_id", userIDStr),
+			slog.String("menu_id", req.MenuID.String()),
+			slog.Int("exercises_count", exercisesCount))
 		http.Error(w, fmt.Sprintf("Failed to start workout: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	// デバッグログ：レスポンス情報
+	setsInResponse := 0
+	if resp != nil && resp.Sets != nil {
+		setsInResponse = len(resp.Sets)
+	}
+
+	s.logger.InfoContext(r.Context(), "StartWorkout response prepared",
+		slog.String("user_id", userIDStr),
+		slog.String("workout_id", resp.ID.String()),
+		slog.String("menu_id", resp.MenuID.String()),
+		slog.String("menu_name", resp.MenuName),
+		slog.Int("sets_count", setsInResponse))
+
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+
+	// デバッグ用にJSONを文字列にエンコードし、ログに出力
+	responseJSON, _ := json.MarshalIndent(resp, "", "  ")
+	s.logger.InfoContext(r.Context(), "StartWorkout JSON response",
+		slog.String("user_id", userIDStr),
+		slog.String("workout_id", resp.ID.String()),
+		slog.String("response_json", string(responseJSON)))
+
 	json.NewEncoder(w).Encode(resp)
 }
 
@@ -285,6 +343,7 @@ func (s *Server) handleGetWorkout(w http.ResponseWriter, r *http.Request) {
 
 	// ワークアウト取得
 	resp, err := s.workoutService.GetWorkoutWithSets(r.Context(), workoutID)
+	s.logger.Debug("Workout response", slog.Any("response", resp))
 	if err != nil {
 		s.logger.Error("Failed to get workout with sets", slog.Any("error", err), slog.String("workout_id", workoutID.String()))
 		http.Error(w, fmt.Sprintf("Failed to get workout: %v", err), http.StatusInternalServerError)

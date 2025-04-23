@@ -86,6 +86,13 @@ func (s *WorkoutService) ListWorkoutsByUser(ctx context.Context, userID string) 
 
 // StartWorkout は新しいワークアウトを開始する
 func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkoutRequest, userID string) (resp *dto.WorkoutResponse, err error) {
+	// デバッグログ: リクエスト情報
+	s.logger.InfoContext(ctx, "StartWorkout requested",
+		slog.String("user_id", userID),
+		slog.String("menu_id", req.MenuID.String()),
+		slog.Int("exercises_count", len(req.Exercises)),
+		slog.Int("note_length", len(req.Note)))
+
 	// トランザクション開始
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -116,6 +123,12 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 		pgNote = pgtype.Text{String: req.Note, Valid: true}
 	}
 
+	// デバッグログ: DB挿入前の値確認
+	s.logger.InfoContext(ctx, "Creating workout in DB",
+		slog.String("user_id", userID),
+		slog.String("menu_id", req.MenuID.String()),
+		slog.Bool("has_note", req.Note != ""))
+
 	// ワークアウト作成
 	workout, err := qtx.CreateWorkout(ctx, sqlc.CreateWorkoutParams{
 		UserID: userID,
@@ -127,6 +140,13 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 		return nil, err
 	}
 
+	// デバッグログ: ワークアウト作成成功
+	s.logger.InfoContext(ctx, "Workout created in DB",
+		slog.String("user_id", userID),
+		slog.String("menu_id", req.MenuID.String()),
+		slog.String("workout_id", workout.ID.String()),
+		slog.String("started_at", workout.StartedAt.Time.Format(time.RFC3339)))
+
 	// メニュー情報の取得
 	menu, err := qtx.GetMenu(ctx, req.MenuID)
 	if err != nil {
@@ -134,55 +154,230 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 		return nil, err
 	}
 
-	// メニュー項目の取得
-	menuItems, err := qtx.ListMenuItemsByMenu(ctx, pgMenuID)
-	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute ListMenuItemsByMenu query after creating workout", slog.Any("error", err), slog.String("menu_id", req.MenuID.String()), slog.String("workout_id", workout.ID.String()))
-		return nil, err
-	}
+	// デバッグログ: メニュー情報取得成功
+	s.logger.InfoContext(ctx, "Menu info retrieved",
+		slog.String("menu_id", req.MenuID.String()),
+		slog.String("menu_name", menu.Name),
+		slog.String("workout_id", workout.ID.String()))
 
-	// セットの作成
-	sets := make([]dto.SetView, 0, len(menuItems))
 	pgWorkoutID := pgtype.UUID{Bytes: workout.ID, Valid: true}
+	sets := make([]dto.SetView, 0)
 
-	for i, item := range menuItems {
-		// 初期値は0で設定
-		var weightKg pgtype.Numeric
-		if errConv := weightKg.Scan("0"); errConv != nil {
-			s.logger.ErrorContext(ctx, "Failed to scan '0' into weightKg", slog.Any("error", errConv), slog.String("workout_id", workout.ID.String()), slog.Int("item_index", i))
-			err = fmt.Errorf("weight_kg conversion error: %w", errConv)
-			return nil, err
+	// リクエストからエクササイズとセットの情報がある場合は、それを使用
+	if len(req.Exercises) > 0 {
+		s.logger.InfoContext(ctx, "Creating sets from request data",
+			slog.Int("exercise_count", len(req.Exercises)),
+			slog.String("workout_id", workout.ID.String()))
+
+		// エクササイズIDと名前のマップを作成(N+1問題を防ぐ)
+		exerciseMap := make(map[string]string)
+
+		for exerciseIndex, exercise := range req.Exercises {
+			// エクササイズIDをUUIDに変換
+			exerciseID, err := uuid.Parse(exercise.ExerciseID)
+			if err != nil {
+				s.logger.WarnContext(ctx, "Invalid exercise ID format",
+					slog.String("exercise_id", exercise.ExerciseID),
+					slog.Any("error", err),
+					slog.String("workout_id", workout.ID.String()),
+					slog.Int("exercise_index", exerciseIndex))
+				continue
+			}
+
+			// デバッグログ: エクササイズ処理
+			s.logger.InfoContext(ctx, "Processing exercise",
+				slog.Int("exercise_index", exerciseIndex),
+				slog.String("exercise_id", exercise.ExerciseID),
+				slog.Int("sets_count", len(exercise.Sets)),
+				slog.String("workout_id", workout.ID.String()))
+
+			// エクササイズ名をキャッシュまたは取得
+			exerciseName, ok := exerciseMap[exercise.ExerciseID]
+			if !ok {
+				exerciseObj, err := qtx.GetExercise(ctx, exerciseID)
+				if err != nil {
+					s.logger.WarnContext(ctx, "Failed to get exercise",
+						slog.String("exercise_id", exercise.ExerciseID),
+						slog.Any("error", err),
+						slog.String("workout_id", workout.ID.String()))
+					exerciseName = "不明な種目"
+				} else {
+					exerciseName = exerciseObj.Name
+					exerciseMap[exercise.ExerciseID] = exerciseName
+					s.logger.InfoContext(ctx, "Exercise name retrieved",
+						slog.String("exercise_id", exercise.ExerciseID),
+						slog.String("exercise_name", exerciseName),
+						slog.String("workout_id", workout.ID.String()))
+				}
+			}
+
+			// 各セットを作成
+			pgExerciseID := pgtype.UUID{Bytes: exerciseID, Valid: true}
+
+			for setIndex, set := range exercise.Sets {
+				// デバッグログ: セット情報
+				s.logger.InfoContext(ctx, "Processing set",
+					slog.Int("exercise_index", exerciseIndex),
+					slog.Int("set_index", setIndex),
+					slog.Float64("weight_kg", set.WeightKg),
+					slog.Int("reps", int(set.Reps)),
+					slog.Any("rir", set.RIR),
+					slog.Any("rpe", set.RPE),
+					slog.String("workout_id", workout.ID.String()))
+
+				// 重量をNumericに変換
+				var weightKg pgtype.Numeric
+				weightKgStr := strconv.FormatFloat(set.WeightKg, 'f', 2, 64)
+				if err := weightKg.Scan(weightKgStr); err != nil {
+					s.logger.WarnContext(ctx, "Weight conversion error",
+						slog.Any("error", err),
+						slog.Float64("weight", set.WeightKg),
+						slog.String("workout_id", workout.ID.String()),
+						slog.Int("exercise_index", exerciseIndex),
+						slog.Int("set_index", setIndex))
+					continue
+				}
+
+				// RIR, RPE 変換
+				var rir, rpe pgtype.Numeric
+				if set.RIR != nil {
+					rirStr := strconv.FormatFloat(*set.RIR, 'f', 1, 64)
+					if err := rir.Scan(rirStr); err != nil {
+						s.logger.WarnContext(ctx, "RIR conversion error",
+							slog.Any("error", err),
+							slog.Float64("rir", *set.RIR),
+							slog.String("workout_id", workout.ID.String()),
+							slog.Int("exercise_index", exerciseIndex),
+							slog.Int("set_index", setIndex))
+					}
+				}
+
+				if set.RPE != nil {
+					rpeStr := strconv.FormatFloat(*set.RPE, 'f', 1, 64)
+					if err := rpe.Scan(rpeStr); err != nil {
+						s.logger.WarnContext(ctx, "RPE conversion error",
+							slog.Any("error", err),
+							slog.Float64("rpe", *set.RPE),
+							slog.String("workout_id", workout.ID.String()),
+							slog.Int("exercise_index", exerciseIndex),
+							slog.Int("set_index", setIndex))
+					}
+				}
+
+				// セットの順番
+				setOrder := int32(setIndex + 1)
+
+				// デバッグログ: セット作成試行
+				s.logger.InfoContext(ctx, "Creating set in DB",
+					slog.Int("exercise_index", exerciseIndex),
+					slog.Int("set_index", setIndex),
+					slog.Int("set_order", int(setOrder)),
+					slog.String("exercise_name", exerciseName),
+					slog.String("workout_id", workout.ID.String()))
+
+				// セット作成
+				createdSet, err := qtx.CreateSet(ctx, sqlc.CreateSetParams{
+					WorkoutID:  pgWorkoutID,
+					ExerciseID: pgExerciseID,
+					SetOrder:   setOrder,
+					WeightKg:   weightKg,
+					Reps:       set.Reps,
+					Rir:        rir,
+					Rpe:        rpe,
+				})
+				if err != nil {
+					s.logger.ErrorContext(ctx, "Failed to create set",
+						slog.Any("error", err),
+						slog.String("workout_id", workout.ID.String()),
+						slog.Int("exercise_index", exerciseIndex),
+						slog.Int("set_index", setIndex))
+					continue
+				}
+
+				// デバッグログ: セット作成成功
+				s.logger.InfoContext(ctx, "Set created in DB",
+					slog.String("set_id", createdSet.ID.String()),
+					slog.Int("exercise_index", exerciseIndex),
+					slog.Int("set_index", setIndex),
+					slog.String("workout_id", workout.ID.String()))
+
+				// DTOに変換
+				setView := dto.SetView{
+					ID:       createdSet.ID,
+					Exercise: exerciseName,
+					SetOrder: setOrder,
+					WeightKg: set.WeightKg,
+					Reps:     set.Reps,
+				}
+
+				// RIR/RPEの設定
+				if set.RIR != nil {
+					setView.RIR = set.RIR
+				}
+				if set.RPE != nil {
+					setView.RPE = set.RPE
+				}
+
+				sets = append(sets, setView)
+			}
 		}
+	} else {
+		// 既存の処理: メニュー項目に基づいたセット作成（フロントエンドから送信されたデータがない場合のフォールバック）
+		s.logger.InfoContext(ctx, "No exercises in request, creating sets based on menu items",
+			slog.String("menu_id", req.MenuID.String()),
+			slog.String("workout_id", workout.ID.String()))
 
-		// RIR, RPE は初期状態では NULL (Valid: false)
-		var rir pgtype.Numeric
-		var rpe pgtype.Numeric
-
-		// ワークアウトセット作成
-		set, err := qtx.CreateSet(ctx, sqlc.CreateSetParams{
-			WorkoutID:  pgWorkoutID,
-			ExerciseID: item.ExerciseID,
-			SetOrder:   item.SetOrder,
-			WeightKg:   weightKg,
-			Reps:       0,
-			Rir:        rir,
-			Rpe:        rpe,
-		})
+		menuItems, err := qtx.ListMenuItemsByMenu(ctx, pgMenuID)
 		if err != nil {
-			s.logger.ErrorContext(ctx, "Failed to execute CreateSet query", slog.Any("error", err), slog.String("workout_id", workout.ID.String()), slog.Int("item_index", i), slog.Any("item", item))
+			s.logger.ErrorContext(ctx, "Failed to execute ListMenuItemsByMenu query after creating workout", slog.Any("error", err), slog.String("menu_id", req.MenuID.String()), slog.String("workout_id", workout.ID.String()))
 			return nil, err
 		}
 
-		// DTOに変換
-		sets = append(sets, dto.SetView{
-			ID:       set.ID,
-			Exercise: item.ExerciseName,
-			SetOrder: set.SetOrder,
-			WeightKg: 0,
-			Reps:     set.Reps,
-			RIR:      nil,
-			RPE:      nil,
-		})
+		s.logger.InfoContext(ctx, "Menu items retrieved for fallback set creation",
+			slog.Int("menu_items_count", len(menuItems)),
+			slog.String("menu_id", req.MenuID.String()),
+			slog.String("workout_id", workout.ID.String()))
+
+		// セットの作成
+		for i, item := range menuItems {
+			// 初期値は0で設定
+			var weightKg pgtype.Numeric
+			if errConv := weightKg.Scan("0"); errConv != nil {
+				s.logger.ErrorContext(ctx, "Failed to scan '0' into weightKg", slog.Any("error", errConv), slog.String("workout_id", workout.ID.String()), slog.Int("item_index", i))
+				err = fmt.Errorf("weight_kg conversion error: %w", errConv)
+				return nil, err
+			}
+
+			// RIR, RPE は初期状態では NULL (Valid: false)
+			var rir pgtype.Numeric
+			var rpe pgtype.Numeric
+
+			// ワークアウトセット作成
+			set, err := qtx.CreateSet(ctx, sqlc.CreateSetParams{
+				WorkoutID:  pgWorkoutID,
+				ExerciseID: item.ExerciseID,
+				SetOrder:   item.SetOrder,
+				WeightKg:   weightKg,
+				Reps:       0,
+				Rir:        rir,
+				Rpe:        rpe,
+			})
+			if err != nil {
+				s.logger.ErrorContext(ctx, "Failed to execute CreateSet query", slog.Any("error", err), slog.String("workout_id", workout.ID.String()), slog.Int("item_index", i), slog.Any("item", item))
+				return nil, err
+			}
+
+			// DTOに変換
+			sets = append(sets, dto.SetView{
+				ID:       set.ID,
+				Exercise: item.ExerciseName,
+				SetOrder: set.SetOrder,
+				WeightKg: 0,
+				Reps:     set.Reps,
+				RIR:      nil,
+				RPE:      nil,
+			})
+		}
 	}
 
 	// トランザクションコミット
@@ -191,16 +386,35 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 		return nil, err
 	}
 
+	// デバッグログ: トランザクション完了
+	s.logger.InfoContext(ctx, "Transaction committed successfully",
+		slog.String("workout_id", workout.ID.String()),
+		slog.Int("sets_count", len(sets)))
+
+	// ノートの変換
+	var noteStr string
+	if workout.Note.Valid {
+		noteStr = workout.Note.String
+	}
+
 	// レスポンス作成
-	resp = &dto.WorkoutResponse{
+	response := &dto.WorkoutResponse{
 		ID:        workout.ID,
 		MenuID:    req.MenuID,
 		MenuName:  menu.Name,
 		StartedAt: workout.StartedAt.Time.Format(time.RFC3339),
-		Note:      req.Note,
+		Note:      noteStr,
 		Sets:      sets,
 	}
-	return resp, nil
+
+	// デバッグログ: 最終レスポンス
+	s.logger.InfoContext(ctx, "StartWorkout response prepared",
+		slog.String("workout_id", workout.ID.String()),
+		slog.String("menu_id", req.MenuID.String()),
+		slog.String("menu_name", menu.Name),
+		slog.Int("sets_count", len(sets)))
+
+	return response, nil
 }
 
 // UpdateSet はセットを更新する

@@ -1,15 +1,12 @@
 import { useLoaderData } from "react-router";
 
 import { MenuSelector } from "./components/menu-selector";
-import type { SelectableMenu } from "./types";
 
-export { loader } from "./loader";
+import { loader } from "./loader";
 
 export default function NewWorkoutSelectMenu() {
-  const { menus } = useLoaderData() as { menus: SelectableMenu[] };
+  const { menus } = useLoaderData<typeof loader>();
 
-  // 条件分岐は不要になり、常にMenuSelectorを表示
-  console.log("Route (route.tsx): Rendering MenuSelector with menus from API:", menus);
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">トレーニングメニュー選択</h1>
@@ -20,3 +17,5 @@ export default function NewWorkoutSelectMenu() {
     </div>
   );
 }
+
+export { loader };

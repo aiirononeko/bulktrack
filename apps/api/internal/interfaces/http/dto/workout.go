@@ -2,10 +2,25 @@ package dto
 
 import "github.com/google/uuid"
 
+// ExerciseWithSets はワークアウト時のエクササイズとセットを表す
+type ExerciseWithSets struct {
+	ExerciseID string       `json:"exercise_id"`
+	Sets       []WorkoutSet `json:"sets"`
+}
+
+// WorkoutSet はワークアウトセットの詳細を表す
+type WorkoutSet struct {
+	WeightKg float64  `json:"weight_kg"`
+	Reps     int32    `json:"reps"`
+	RIR      *float64 `json:"rir,omitempty"`
+	RPE      *float64 `json:"rpe,omitempty"`
+}
+
 // CreateWorkoutRequest はワークアウト作成リクエストを表す
 type CreateWorkoutRequest struct {
-	MenuID uuid.UUID `json:"menu_id"`
-	Note   string    `json:"note,omitempty"`
+	MenuID    uuid.UUID          `json:"menu_id"`
+	Note      string             `json:"note,omitempty"`
+	Exercises []ExerciseWithSets `json:"exercises,omitempty"` // クライアントから複数セットの情報を受け取る
 }
 
 // WorkoutResponse はワークアウト作成レスポンスを表す

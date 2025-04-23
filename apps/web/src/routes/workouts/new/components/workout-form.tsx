@@ -2,6 +2,7 @@ import { Field } from "@base-ui-components/react/field";
 import { Form as BaseForm } from "@base-ui-components/react/form";
 import { useEffect, useState } from "react";
 import { useActionData, useSubmit } from "react-router";
+
 import type { MenuExerciseTemplate } from "../types";
 
 // 強度指標モード (RIR or RPE)
@@ -18,7 +19,7 @@ interface WorkoutSet {
   weight: string;
   reps: string;
   rir: string; // RIRの値
-  rpe: string; // RPEの値 (追加)
+  rpe: string; // RPEの値
 }
 
 interface ExerciseLog {
@@ -27,16 +28,18 @@ interface ExerciseLog {
   sets: WorkoutSet[];
 }
 
+// エラーの型定義
+interface FormErrors {
+  form?: string;
+}
+
 // WorkoutForm コンポーネント
 export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
-  console.log("WorkoutForm received menuId:", menuId);
-  console.log("WorkoutForm received initialExercises:", initialExercises);
-
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
-  const [errors, setErrors] = useState({});
-  const [intensityMode, setIntensityMode] = useState<IntensityMode>("rir"); // 強度指標モードのState (デフォルトRIR)
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [intensityMode, setIntensityMode] = useState<IntensityMode>("rir");
 
-  const actionData = useActionData() as { error?: string } | undefined;
+  const actionData = useActionData() as { error?: string; validationErrors?: any } | undefined;
   const submit = useSubmit();
 
   // 初期化ロジック
@@ -44,12 +47,15 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
     const initialLogs = initialExercises.map((exercise) => ({
       exerciseId: exercise.id,
       exerciseName: exercise.name,
-      sets: Array.from({ length: 3 }, () => ({
+      sets: Array.from({ length: exercise.targetSets || 3 }, () => ({
         id: crypto.randomUUID(),
-        weight: "",
-        reps: "",
+        weight: exercise.targetWeight?.toString() || "",
+        reps:
+          typeof exercise.targetReps === "number"
+            ? exercise.targetReps.toString()
+            : exercise.targetReps || "",
         rir: "",
-        rpe: "", // rpe も初期化
+        rpe: "",
       })),
     }));
     setExerciseLogs(initialLogs);
@@ -62,10 +68,23 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
       weight: "",
       reps: "",
       rir: "",
-      rpe: "", // rpe も追加
+      rpe: "",
     };
     const updatedLogs = [...exerciseLogs];
     updatedLogs[exerciseLogIndex].sets.push(newSet);
+    setExerciseLogs(updatedLogs);
+  };
+
+  // セットを削除
+  const handleRemoveSet = (exerciseLogIndex: number, setIndex: number) => {
+    const updatedLogs = [...exerciseLogs];
+
+    // 最後の1セットの場合は削除しない
+    if (updatedLogs[exerciseLogIndex].sets.length <= 1) {
+      return;
+    }
+
+    updatedLogs[exerciseLogIndex].sets.splice(setIndex, 1);
     setExerciseLogs(updatedLogs);
   };
 
@@ -82,12 +101,8 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
     // rir/rpe フィールドの場合、現在のモードに基づいて更新
     if (field === "rir") {
       targetSet.rir = value;
-      // 反対側のモードの値はクリアする（任意）
-      // targetSet.rpe = "";
     } else if (field === "rpe") {
       targetSet.rpe = value;
-      // 反対側のモードの値はクリアする（任意）
-      // targetSet.rir = "";
     } else {
       // weight, reps はそのまま更新
       targetSet[field] = value;
@@ -99,23 +114,45 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
   // フォーム送信
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // バリデーション
+    if (exerciseLogs.length === 0) {
+      setErrors({ form: "エクササイズが見つかりません" });
+      return;
+    }
+
+    for (const log of exerciseLogs) {
+      for (const set of log.sets) {
+        if (!set.weight || !set.reps) {
+          setErrors({ form: "すべてのセットに重量とレップ数を入力してください" });
+          return;
+        }
+      }
+    }
+
     const formData = new FormData();
 
-    // 送信する exerciseLogs を準備 (rir/rpeを整理)
-    const logsToSend = exerciseLogs.map((log) => ({
-      ...log,
+    // バックエンドAPIの期待する形式に変換
+    const exercises = exerciseLogs.map((log) => ({
+      exercise_id: log.exerciseId,
       sets: log.sets.map((set) => {
-        // 送信データを作成。現在のモードに応じてrir/rpeを設定
-        const setData: Partial<WorkoutSet> & { weight: string; reps: string } = {
-          id: set.id,
-          weight: set.weight,
-          reps: set.reps,
-          rir: intensityMode === "rir" ? set.rir : "", // モードに合わせて値を設定、他方は空文字 or null
-          rpe: intensityMode === "rpe" ? set.rpe : "", // モードに合わせて値を設定、他方は空文字 or null
+        const setData: {
+          weight_kg: number;
+          reps: number;
+          rir?: number;
+          rpe?: number;
+        } = {
+          weight_kg: Number.parseFloat(set.weight) || 0,
+          reps: Number.parseInt(set.reps, 10) || 0,
         };
-        // API が null を期待する場合、空文字を null に変換
-        // if (setData.rir === "") setData.rir = null;
-        // if (setData.rpe === "") setData.rpe = null;
+
+        // 現在のモードに応じてRIR/RPEを設定
+        if (intensityMode === "rir" && set.rir) {
+          setData.rir = Number.parseFloat(set.rir) || undefined;
+        } else if (intensityMode === "rpe" && set.rpe) {
+          setData.rpe = Number.parseFloat(set.rpe) || undefined;
+        }
+
         return setData;
       }),
     }));
@@ -124,8 +161,20 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
       "workout",
       JSON.stringify({
         menuId,
-        exercises: logsToSend, // 整理したデータを送信
+        exercises,
       })
+    );
+
+    console.log(
+      "送信データ:",
+      JSON.stringify(
+        {
+          menuId,
+          exercises,
+        },
+        null,
+        2
+      )
     );
 
     submit(formData, { method: "post" });
@@ -140,6 +189,16 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
           role="alert"
         >
           <span className="block sm:inline">{actionData.error}</span>
+        </div>
+      )}
+
+      {/* バリデーションエラー表示 */}
+      {errors.form && (
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+          role="alert"
+        >
+          <span className="block sm:inline">{errors.form}</span>
         </div>
       )}
 
@@ -245,7 +304,7 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
                       }
                       className="w-full border p-2 rounded"
                       min="0"
-                      step="0.5" // RIRは0.5刻みも考慮
+                      step="0.5"
                     />
                     <Field.Error className="text-red-500 text-xs" />
                   </Field.Root>
@@ -268,11 +327,21 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
                       className="w-full border p-2 rounded"
                       min="1"
                       max="10"
-                      step="0.5" // RPEの範囲と刻み
+                      step="0.5"
                     />
                     <Field.Error className="text-red-500 text-xs" />
                   </Field.Root>
                 )}
+
+                {/* セット削除ボタン */}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSet(exerciseIndex, setIndex)}
+                  className="text-red-500 hover:text-red-700 ml-2"
+                  aria-label={`セット ${setIndex + 1} を削除`}
+                >
+                  ×
+                </button>
               </div>
             ))}
             {/* セット追加ボタン */}
