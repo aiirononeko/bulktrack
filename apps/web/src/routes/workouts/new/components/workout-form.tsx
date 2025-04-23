@@ -3,6 +3,7 @@ import { Form as BaseForm } from "@base-ui-components/react/form";
 import { useEffect, useState } from "react";
 import { useActionData, useSubmit } from "react-router";
 
+import type { ExerciseLastRecord } from "ts-utils/src/api/types/menus";
 import type { MenuExerciseTemplate } from "../types";
 
 // 強度指標モード (RIR or RPE)
@@ -12,6 +13,7 @@ type IntensityMode = "rir" | "rpe";
 interface WorkoutFormProps {
   menuId: string;
   initialExercises: MenuExerciseTemplate[];
+  lastRecords?: ExerciseLastRecord[]; // 前回のトレーニング記録（オプション）
 }
 
 interface WorkoutSet {
@@ -34,10 +36,13 @@ interface FormErrors {
 }
 
 // WorkoutForm コンポーネント
-export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
+export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: WorkoutFormProps) {
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [intensityMode, setIntensityMode] = useState<IntensityMode>("rir");
+
+  // 前回の記録をexerciseIdでマップ
+  const lastRecordMap = new Map(lastRecords?.map((record) => [record.exercise_id, record]) || []);
 
   const actionData = useActionData() as { error?: string; validationErrors?: any } | undefined;
   const submit = useSubmit();
@@ -147,10 +152,10 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
         };
 
         // 現在のモードに応じてRIR/RPEを設定
-        if (intensityMode === "rir" && set.rir) {
-          setData.rir = Number.parseFloat(set.rir) || undefined;
-        } else if (intensityMode === "rpe" && set.rpe) {
-          setData.rpe = Number.parseFloat(set.rpe) || undefined;
+        if (intensityMode === "rir" && set.rir !== "") {
+          setData.rir = Number.parseFloat(set.rir);
+        } else if (intensityMode === "rpe" && set.rpe !== "") {
+          setData.rpe = Number.parseFloat(set.rpe);
         }
 
         return setData;
@@ -163,18 +168,6 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
         menuId,
         exercises,
       })
-    );
-
-    console.log(
-      "送信データ:",
-      JSON.stringify(
-        {
-          menuId,
-          exercises,
-        },
-        null,
-        2
-      )
     );
 
     submit(formData, { method: "post" });
@@ -247,101 +240,155 @@ export function WorkoutForm({ menuId, initialExercises }: WorkoutFormProps) {
           </div>
           <div className="space-y-4">
             {log.sets.map((set, setIndex) => (
-              <div key={set.id} className="flex items-center space-x-2">
-                <label
-                  htmlFor={`weight-${exerciseIndex}-${setIndex}`}
-                  className="w-10 text-right shrink-0 pr-2"
-                >{`Set ${setIndex + 1}`}</label>
-                {/* Weight Field */}
-                <Field.Root
-                  name={`exercises[${exerciseIndex}].sets[${setIndex}].weight`}
-                  className="flex-1"
-                >
-                  <Field.Label className="sr-only">Weight</Field.Label>
-                  <Field.Control
-                    id={`weight-${exerciseIndex}-${setIndex}`}
-                    type="number"
-                    placeholder="Weight (kg)"
-                    value={set.weight}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleInputChange(exerciseIndex, setIndex, "weight", e.target.value)
-                    }
-                    className="w-full border p-2 rounded"
-                  />
-                  <Field.Error className="text-red-500 text-xs" />
-                </Field.Root>
-                {/* Reps Field */}
-                <Field.Root
-                  name={`exercises[${exerciseIndex}].sets[${setIndex}].reps`}
-                  className="flex-1"
-                >
-                  <Field.Label className="sr-only">Reps</Field.Label>
-                  <Field.Control
-                    type="number"
-                    placeholder="Reps"
-                    value={set.reps}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleInputChange(exerciseIndex, setIndex, "reps", e.target.value)
-                    }
-                    className="w-full border p-2 rounded"
-                  />
-                  <Field.Error className="text-red-500 text-xs" />
-                </Field.Root>
-
-                {/* RIR Field (条件付き表示) */}
-                {intensityMode === "rir" && (
+              <div key={set.id}>
+                <div className="flex items-center space-x-2">
+                  <label
+                    htmlFor={`weight-${exerciseIndex}-${setIndex}`}
+                    className="w-10 text-right shrink-0 pr-2"
+                  >{`Set ${setIndex + 1}`}</label>
+                  {/* Weight Field */}
                   <Field.Root
-                    name={`exercises[${exerciseIndex}].sets[${setIndex}].rir`}
+                    name={`exercises[${exerciseIndex}].sets[${setIndex}].weight`}
                     className="flex-1"
                   >
-                    <Field.Label className="sr-only">RIR</Field.Label>
+                    <Field.Label className="sr-only">Weight</Field.Label>
                     <Field.Control
+                      id={`weight-${exerciseIndex}-${setIndex}`}
                       type="number"
-                      placeholder="RIR"
-                      value={set.rir}
+                      placeholder="Weight (kg)"
+                      value={set.weight}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        handleInputChange(exerciseIndex, setIndex, "rir", e.target.value)
+                        handleInputChange(exerciseIndex, setIndex, "weight", e.target.value)
                       }
                       className="w-full border p-2 rounded"
-                      min="0"
-                      step="0.5"
                     />
                     <Field.Error className="text-red-500 text-xs" />
                   </Field.Root>
-                )}
-
-                {/* RPE Field (条件付き表示) */}
-                {intensityMode === "rpe" && (
+                  {/* Reps Field */}
                   <Field.Root
-                    name={`exercises[${exerciseIndex}].sets[${setIndex}].rpe`}
+                    name={`exercises[${exerciseIndex}].sets[${setIndex}].reps`}
                     className="flex-1"
                   >
-                    <Field.Label className="sr-only">RPE</Field.Label>
+                    <Field.Label className="sr-only">Reps</Field.Label>
                     <Field.Control
                       type="number"
-                      placeholder="RPE"
-                      value={set.rpe}
+                      placeholder="Reps"
+                      value={set.reps}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        handleInputChange(exerciseIndex, setIndex, "rpe", e.target.value)
+                        handleInputChange(exerciseIndex, setIndex, "reps", e.target.value)
                       }
                       className="w-full border p-2 rounded"
-                      min="1"
-                      max="10"
-                      step="0.5"
                     />
                     <Field.Error className="text-red-500 text-xs" />
                   </Field.Root>
-                )}
 
-                {/* セット削除ボタン */}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSet(exerciseIndex, setIndex)}
-                  className="text-red-500 hover:text-red-700 ml-2"
-                  aria-label={`セット ${setIndex + 1} を削除`}
-                >
-                  ×
-                </button>
+                  {/* RIR Field (条件付き表示) */}
+                  {intensityMode === "rir" && (
+                    <Field.Root
+                      name={`exercises[${exerciseIndex}].sets[${setIndex}].rir`}
+                      className="flex-1"
+                    >
+                      <Field.Label className="sr-only">RIR</Field.Label>
+                      <Field.Control
+                        type="number"
+                        placeholder="RIR"
+                        value={set.rir}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleInputChange(exerciseIndex, setIndex, "rir", e.target.value)
+                        }
+                        className="w-full border p-2 rounded"
+                        min="0"
+                        step="0.5"
+                      />
+                      <Field.Error className="text-red-500 text-xs" />
+                    </Field.Root>
+                  )}
+
+                  {/* RPE Field (条件付き表示) */}
+                  {intensityMode === "rpe" && (
+                    <Field.Root
+                      name={`exercises[${exerciseIndex}].sets[${setIndex}].rpe`}
+                      className="flex-1"
+                    >
+                      <Field.Label className="sr-only">RPE</Field.Label>
+                      <Field.Control
+                        type="number"
+                        placeholder="RPE"
+                        value={set.rpe}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleInputChange(exerciseIndex, setIndex, "rpe", e.target.value)
+                        }
+                        className="w-full border p-2 rounded"
+                        min="1"
+                        max="10"
+                        step="0.5"
+                      />
+                      <Field.Error className="text-red-500 text-xs" />
+                    </Field.Root>
+                  )}
+
+                  {/* セット削除ボタン */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSet(exerciseIndex, setIndex)}
+                    className="text-red-500 hover:text-red-700 ml-2"
+                    aria-label={`セット ${setIndex + 1} を削除`}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* 前回の記録を各セットの下に控えめに表示 */}
+                {lastRecordMap.get(log.exerciseId)?.last_record && (
+                  <div className="ml-12 mt-1 text-xs text-gray-500">
+                    <span>前回: </span>
+                    <span>{lastRecordMap.get(log.exerciseId)?.last_record?.weight_kg || 0}kg </span>
+                    <span>× {lastRecordMap.get(log.exerciseId)?.last_record?.reps || 0}回</span>
+
+                    {/* 現在のモードに応じてRIR/RPEを優先表示 */}
+                    {intensityMode === "rir" ? (
+                      // RIRモードの場合、RIRを優先表示
+                      <>
+                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rir ===
+                          "number" && (
+                          <span className="font-medium">
+                            {" "}
+                            (RIR {lastRecordMap.get(log.exerciseId)?.last_record?.rir})
+                          </span>
+                        )}
+                        {/* RIRがなくてRPEがある場合はRPEも表示 */}
+                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rir !== "number" &&
+                          typeof lastRecordMap.get(log.exerciseId)?.last_record?.rpe ===
+                            "number" && (
+                            <span>
+                              {" "}
+                              (RPE {lastRecordMap.get(log.exerciseId)?.last_record?.rpe})
+                            </span>
+                          )}
+                      </>
+                    ) : (
+                      // RPEモードの場合、RPEを優先表示
+                      <>
+                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rpe ===
+                          "number" && (
+                          <span className="font-medium">
+                            {" "}
+                            (RPE {lastRecordMap.get(log.exerciseId)?.last_record?.rpe})
+                          </span>
+                        )}
+                        {/* RPEがなくてRIRがある場合はRIRも表示 */}
+                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rpe !== "number" &&
+                          typeof lastRecordMap.get(log.exerciseId)?.last_record?.rir ===
+                            "number" && (
+                            <span>
+                              {" "}
+                              (RIR {lastRecordMap.get(log.exerciseId)?.last_record?.rir})
+                            </span>
+                          )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
             {/* セット追加ボタン */}

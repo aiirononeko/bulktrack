@@ -1,5 +1,6 @@
 import { type ApiClientContext, apiDelete, apiGet, apiPost, apiPut } from "../client";
 import type {
+  ExerciseLastRecordResponse,
   MenuCreateRequest,
   MenuResponse,
   MenuUpdateRequest,
@@ -52,4 +53,14 @@ export async function updateMenu(
  */
 export async function deleteMenu(args: ApiClientContext, id: string): Promise<void> {
   return apiDelete<void>(args, `${BASE_PATH}/${id}`);
+}
+
+/**
+ * メニューに含まれる種目の前回のトレーニング記録を取得
+ */
+export async function getLastRecords(
+  args: ApiClientContext,
+  menuId: string
+): Promise<ExerciseLastRecordResponse> {
+  return apiGet<ExerciseLastRecordResponse>(args, `${BASE_PATH}/${menuId}/exercises/last-records`);
 }

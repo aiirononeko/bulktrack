@@ -72,3 +72,28 @@ export interface MenuUpdateRequest {
   description?: string;
   is_template?: boolean;
 }
+
+/**
+ * 前回のトレーニング記録データ
+ */
+export interface LastRecordData {
+  date: string;
+  weight_kg: number;
+  reps: number;
+  rir?: number;
+  rpe?: number;
+}
+
+/**
+ * メニューに含まれる種目の前回のトレーニング記録
+ */
+export interface ExerciseLastRecord {
+  exercise_id: string;
+  exercise_name: string;
+  last_record: LastRecordData | null;
+}
+
+/**
+ * 前回のトレーニング記録取得レスポンス
+ */
+export type ExerciseLastRecordResponse = ExerciseLastRecord[];

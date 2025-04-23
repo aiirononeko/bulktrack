@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/aiirononeko/bulktrack/apps/api/internal/application/query"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/di"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/dto"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/middleware"
@@ -17,12 +18,13 @@ import (
 
 // Server はHTTPサーバーを表す
 type Server struct {
-	container       *di.Container
-	menuService     *service.MenuService
-	workoutService  *service.WorkoutService
-	exerciseService *service.ExerciseService
-	mux             *http.ServeMux
-	logger          *slog.Logger
+	container             *di.Container
+	menuService           *service.MenuService
+	workoutService        *service.WorkoutService
+	exerciseService       *service.ExerciseService
+	latestSetQueryService query.LatestSetQueryService
+	mux                   *http.ServeMux
+	logger                *slog.Logger
 }
 
 // NewServer は新しいHTTPサーバーを作成
@@ -31,14 +33,16 @@ func NewServer(container *di.Container) *Server {
 	menuService := service.NewMenuService(container.DB, container.Logger)
 	workoutService := service.NewWorkoutService(container.DB, container.Logger)
 	exerciseService := service.NewExerciseService(container.DB, container.Logger)
+	latestSetQueryService := query.NewLatestSetQueryService(container.DB, container.Logger)
 
 	s := &Server{
-		container:       container,
-		menuService:     menuService,
-		workoutService:  workoutService,
-		exerciseService: exerciseService,
-		mux:             http.NewServeMux(),
-		logger:          container.Logger,
+		container:             container,
+		menuService:           menuService,
+		workoutService:        workoutService,
+		exerciseService:       exerciseService,
+		latestSetQueryService: latestSetQueryService,
+		mux:                   http.NewServeMux(),
+		logger:                container.Logger,
 	}
 
 	// ミドルウェアの作成
@@ -53,6 +57,7 @@ func NewServer(container *di.Container) *Server {
 	s.mux.Handle("POST /menus", logging(auth(http.HandlerFunc(s.handleCreateMenu))))
 	s.mux.Handle("GET /menus/{id}", logging(auth(http.HandlerFunc(s.handleGetMenu))))
 	s.mux.Handle("DELETE /menus/{id}", logging(auth(http.HandlerFunc(s.handleDeleteMenu))))
+	s.mux.Handle("GET /menus/{id}/exercises/last-records", logging(auth(http.HandlerFunc(s.handleGetLastRecords))))
 
 	// ワークアウト - 認証必須
 	s.mux.Handle("GET /workouts", logging(auth(http.HandlerFunc(s.handleListWorkouts))))
@@ -410,4 +415,38 @@ func (s *Server) handleListExercises(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(exercises)
+}
+
+// 前回のトレーニング記録を取得するエンドポイント
+func (s *Server) handleGetLastRecords(w http.ResponseWriter, r *http.Request) {
+	// メニューIDの取得
+	idStr := strings.TrimPrefix(r.URL.Path, "/menus/")
+	idStr = strings.TrimSuffix(idStr, "/exercises/last-records")
+
+	menuID, err := uuid.Parse(idStr)
+	if err != nil {
+		s.logger.Warn("Invalid menu ID format for last records", slog.String("path", r.URL.Path), slog.String("id_str", idStr), slog.Any("error", err))
+		http.Error(w, "Invalid menu ID", http.StatusBadRequest)
+		return
+	}
+
+	// コンテキストからユーザーIDを取得
+	userIDStr, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		s.logger.Error("User ID not found in context")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// 前回のトレーニング記録取得
+	records, err := s.latestSetQueryService.ListByMenu(r.Context(), userIDStr, menuID)
+	if err != nil {
+		s.logger.Error("Failed to get latest records", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+		http.Error(w, fmt.Sprintf("Failed to get latest records: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンス返却
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(records)
 }

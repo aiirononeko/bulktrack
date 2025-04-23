@@ -27,6 +27,7 @@ type Querier interface {
 	GetSet(ctx context.Context, id uuid.UUID) (Set, error)
 	GetWorkout(ctx context.Context, id uuid.UUID) (Workout, error)
 	ListExercises(ctx context.Context) ([]ListExercisesRow, error)
+	ListLatestSetsByMenu(ctx context.Context, arg ListLatestSetsByMenuParams) ([]ListLatestSetsByMenuRow, error)
 	ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]ListMenuItemsByMenuRow, error)
 	ListMenusByUser(ctx context.Context, userID string) ([]Menu, error)
 	ListSetsByWorkout(ctx context.Context, workoutID pgtype.UUID) ([]ListSetsByWorkoutRow, error)
