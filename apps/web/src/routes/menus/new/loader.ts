@@ -6,6 +6,7 @@ import type { Route } from "./+types/route";
 interface Exercise {
   id: string;
   name: string;
+  description: string;
 }
 
 export async function loader(args: Route.LoaderArgs) {

@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { MenuSummary } from "../_index/type"; // 正しい型定義ファイルのパス
+import type { MenuSummary } from "../_index/types";
 
 interface MenuListProps {
   menus: MenuSummary[];
@@ -25,13 +25,14 @@ export function MenuList({ menus }: MenuListProps) {
       {menus.map((menu) => (
         <Link
           key={menu.id}
-          to={`/menus/${menu.id}/edit`} // 編集画面へのリンク
+          to={`/menus/${menu.id}/edit`}
           className="block p-6 bg-card rounded-lg border hover:shadow-md transition-shadow duration-200"
         >
           <h3 className="text-lg font-semibold mb-2">{menu.name}</h3>
-          {/* Description を追加 */}
-          {menu.description && (
+          {menu.description ? (
             <p className="text-sm text-muted-foreground mt-1">{menu.description}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-1">説明がありません</p>
           )}
         </Link>
       ))}

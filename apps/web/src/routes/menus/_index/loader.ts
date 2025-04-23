@@ -3,7 +3,7 @@ import { redirect } from "react-router";
 
 import { apiFetch } from "~/lib/api-client";
 import type { Route } from "./+types/route";
-import type { MenuApiResponse } from "./type";
+import type { MenuApiResponse } from "./types";
 
 export async function loader(args: Route.LoaderArgs) {
   const { userId } = await getAuth(args);
@@ -25,14 +25,12 @@ export async function loader(args: Route.LoaderArgs) {
     }
 
     const menus = (await response.json()) as MenuApiResponse[];
-    console.log("Successfully fetched menus:", menus);
 
     // APIレスポンスをフロントエンドで使いやすい形式に変換
     const formattedMenus = menus.map((menu) => ({
       id: menu.id,
       name: menu.name,
       description: menu.description,
-      // 必要に応じて他のフィールドも追加
     }));
 
     return { menus: formattedMenus };

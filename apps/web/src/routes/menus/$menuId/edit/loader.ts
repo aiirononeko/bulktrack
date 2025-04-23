@@ -2,7 +2,7 @@ import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
 
 import { apiFetch } from "~/lib/api-client";
-import type { MenuApiResponse } from "../../_index/type";
+import type { MenuApiResponse } from "../../_index/types";
 import type { Route } from "./+types/route";
 
 // APIレスポンスの menu_items に name と description が含まれると仮定
