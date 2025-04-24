@@ -3,7 +3,7 @@ import { Form as BaseForm } from "@base-ui-components/react/form";
 import { useEffect, useState } from "react";
 import { useActionData, useSubmit } from "react-router";
 
-import type { ExerciseLastRecord } from "ts-utils/src/api/types/menus";
+import type { ExerciseLastRecord, LastRecordData } from "ts-utils/src/api/types/menus";
 import type { MenuExerciseTemplate } from "../types";
 
 // 強度指標モード (RIR or RPE)
@@ -338,57 +338,48 @@ export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: Work
                   </button>
                 </div>
 
-                {/* 前回の記録を各セットの下に控えめに表示 */}
-                {lastRecordMap.get(log.exerciseId)?.last_record && (
-                  <div className="ml-12 mt-1 text-xs text-gray-500">
-                    <span>前回: </span>
-                    <span>{lastRecordMap.get(log.exerciseId)?.last_record?.weight_kg || 0}kg </span>
-                    <span>× {lastRecordMap.get(log.exerciseId)?.last_record?.reps || 0}回</span>
+                {/* 前回の記録をセット番号が一致する場合のみ表示 */}
+                {(() => {
+                  // 現在の exerciseId に対応する前回の記録配列を取得
+                  const previousSets = lastRecordMap.get(log.exerciseId)?.last_records;
+                  // 現在のセット番号 (setIndex + 1) と一致する set_order を持つ記録を探す
+                  const correspondingPrevSet = previousSets?.find(
+                    (prevSet: LastRecordData) => prevSet.set_order === setIndex + 1
+                  );
 
-                    {/* 現在のモードに応じてRIR/RPEを優先表示 */}
-                    {intensityMode === "rir" ? (
-                      // RIRモードの場合、RIRを優先表示
-                      <>
-                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rir ===
-                          "number" && (
-                          <span className="font-medium">
-                            {" "}
-                            (RIR {lastRecordMap.get(log.exerciseId)?.last_record?.rir})
-                          </span>
-                        )}
-                        {/* RIRがなくてRPEがある場合はRPEも表示 */}
-                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rir !== "number" &&
-                          typeof lastRecordMap.get(log.exerciseId)?.last_record?.rpe ===
-                            "number" && (
-                            <span>
-                              {" "}
-                              (RPE {lastRecordMap.get(log.exerciseId)?.last_record?.rpe})
-                            </span>
+                  // 一致する記録が見つかった場合のみ表示
+                  return correspondingPrevSet ? (
+                    <div className="ml-12 mt-1 text-xs text-gray-500">
+                      {" "}
+                      {/* mt-2 -> mt-1 に戻す */}
+                      <span>前回 (Set {setIndex + 1}): </span> {/* どのセットの記録か明示 */}
+                      <span>{correspondingPrevSet.weight_kg || 0}kg </span>
+                      <span>× {correspondingPrevSet.reps || 0}回</span>
+                      {/* 現在のモードに応じてRIR/RPEを優先表示 */}
+                      {intensityMode === "rir" ? (
+                        <>
+                          {typeof correspondingPrevSet.rir === "number" && (
+                            <span className="font-medium"> (RIR {correspondingPrevSet.rir})</span>
                           )}
-                      </>
-                    ) : (
-                      // RPEモードの場合、RPEを優先表示
-                      <>
-                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rpe ===
-                          "number" && (
-                          <span className="font-medium">
-                            {" "}
-                            (RPE {lastRecordMap.get(log.exerciseId)?.last_record?.rpe})
-                          </span>
-                        )}
-                        {/* RPEがなくてRIRがある場合はRIRも表示 */}
-                        {typeof lastRecordMap.get(log.exerciseId)?.last_record?.rpe !== "number" &&
-                          typeof lastRecordMap.get(log.exerciseId)?.last_record?.rir ===
-                            "number" && (
-                            <span>
-                              {" "}
-                              (RIR {lastRecordMap.get(log.exerciseId)?.last_record?.rir})
-                            </span>
+                          {typeof correspondingPrevSet.rir !== "number" &&
+                            typeof correspondingPrevSet.rpe === "number" && (
+                              <span> (RPE {correspondingPrevSet.rpe})</span>
+                            )}
+                        </>
+                      ) : (
+                        <>
+                          {typeof correspondingPrevSet.rpe === "number" && (
+                            <span className="font-medium"> (RPE {correspondingPrevSet.rpe})</span>
                           )}
-                      </>
-                    )}
-                  </div>
-                )}
+                          {typeof correspondingPrevSet.rpe !== "number" &&
+                            typeof correspondingPrevSet.rir === "number" && (
+                              <span> (RIR {correspondingPrevSet.rir})</span>
+                            )}
+                        </>
+                      )}
+                    </div>
+                  ) : null; // 見つからなければ何も表示しない
+                })()}
               </div>
             ))}
             {/* セット追加ボタン */}

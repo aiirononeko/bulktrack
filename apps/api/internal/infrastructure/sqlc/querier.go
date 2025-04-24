@@ -22,15 +22,16 @@ type Querier interface {
 	DeleteSet(ctx context.Context, id uuid.UUID) error
 	DeleteWorkout(ctx context.Context, id uuid.UUID) error
 	GetExercise(ctx context.Context, id uuid.UUID) (Exercise, error)
+	GetLatestWorkoutIDByMenu(ctx context.Context, arg GetLatestWorkoutIDByMenuParams) (uuid.UUID, error)
 	GetMenu(ctx context.Context, id uuid.UUID) (Menu, error)
 	GetMenuItem(ctx context.Context, id uuid.UUID) (MenuItem, error)
 	GetSet(ctx context.Context, id uuid.UUID) (Set, error)
 	GetWorkout(ctx context.Context, id uuid.UUID) (Workout, error)
 	ListExercises(ctx context.Context) ([]ListExercisesRow, error)
-	ListLatestSetsByMenu(ctx context.Context, arg ListLatestSetsByMenuParams) ([]ListLatestSetsByMenuRow, error)
 	ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]ListMenuItemsByMenuRow, error)
 	ListMenusByUser(ctx context.Context, userID string) ([]Menu, error)
 	ListSetsByWorkout(ctx context.Context, workoutID pgtype.UUID) ([]ListSetsByWorkoutRow, error)
+	ListSetsByWorkoutAndExercises(ctx context.Context, arg ListSetsByWorkoutAndExercisesParams) ([]ListSetsByWorkoutAndExercisesRow, error)
 	ListWorkoutsByUser(ctx context.Context, userID string) ([]Workout, error)
 	UpdateMenu(ctx context.Context, arg UpdateMenuParams) (Menu, error)
 	UpdateMenuItem(ctx context.Context, arg UpdateMenuItemParams) (MenuItem, error)

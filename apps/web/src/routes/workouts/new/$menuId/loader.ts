@@ -58,7 +58,10 @@ export async function loader(args: Route.LoaderArgs) {
 
     // 前回の記録をマップ（exercise_idをキーに）
     const lastRecordsMap = new Map<string, LastRecordData | null>(
-      lastRecords.map((record: ExerciseLastRecord) => [record.exercise_id, record.last_record])
+      lastRecords.map((record: ExerciseLastRecord) => [
+        record.exercise_id,
+        record.last_records?.[0] || null,
+      ])
     );
 
     // APIレスポンスからExerciseTemplateの形式に変換
@@ -74,6 +77,8 @@ export async function loader(args: Route.LoaderArgs) {
         targetWeight: lastRecord ? lastRecord.weight_kg : undefined,
       };
     });
+
+    console.log("lastRecords", lastRecords);
 
     return {
       menuId,

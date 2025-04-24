@@ -12,51 +12,74 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const listLatestSetsByMenu = `-- name: ListLatestSetsByMenu :many
-SELECT DISTINCT ON (mi.exercise_id)
-    e.id as exercise_id, 
-    e.name as exercise_name,
+const getLatestWorkoutIDByMenu = `-- name: GetLatestWorkoutIDByMenu :one
+SELECT w.id
+FROM workouts w
+JOIN menu_items mi ON w.menu_id = mi.menu_id AND w.user_id = $1 -- 結合条件修正の可能性あり
+WHERE mi.menu_id = $2 AND w.user_id = $1
+ORDER BY w.started_at DESC
+LIMIT 1
+`
+
+type GetLatestWorkoutIDByMenuParams struct {
+	UserID string      `json:"user_id"`
+	MenuID pgtype.UUID `json:"menu_id"`
+}
+
+func (q *Queries) GetLatestWorkoutIDByMenu(ctx context.Context, arg GetLatestWorkoutIDByMenuParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, getLatestWorkoutIDByMenu, arg.UserID, arg.MenuID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const listSetsByWorkoutAndExercises = `-- name: ListSetsByWorkoutAndExercises :many
+SELECT
+    s.exercise_id,
+    e.name AS exercise_name,
+    s.set_order,
     s.weight_kg,
     s.reps,
     s.rir,
     s.rpe,
     w.started_at
-FROM menu_items mi
-JOIN exercises e ON mi.exercise_id = e.id
-LEFT JOIN sets s ON s.exercise_id = mi.exercise_id
-LEFT JOIN workouts w ON w.id = s.workout_id
-WHERE mi.menu_id = $1
-  AND w.user_id = $2
-ORDER BY mi.exercise_id, w.started_at DESC, s.set_order
+FROM sets s
+JOIN exercises e ON s.exercise_id = e.id
+JOIN workouts w ON s.workout_id = w.id
+WHERE s.workout_id = $1
+  AND s.exercise_id = ANY($2::uuid[]) -- exercise_ids はメニューに含まれる種目IDの配列
+ORDER BY s.exercise_id, s.set_order
 `
 
-type ListLatestSetsByMenuParams struct {
-	MenuID pgtype.UUID `json:"menu_id"`
-	UserID string      `json:"user_id"`
+type ListSetsByWorkoutAndExercisesParams struct {
+	WorkoutID   pgtype.UUID `json:"workout_id"`
+	ExerciseIds []uuid.UUID `json:"exercise_ids"`
 }
 
-type ListLatestSetsByMenuRow struct {
-	ExerciseID   uuid.UUID          `json:"exercise_id"`
+type ListSetsByWorkoutAndExercisesRow struct {
+	ExerciseID   pgtype.UUID        `json:"exercise_id"`
 	ExerciseName string             `json:"exercise_name"`
+	SetOrder     int32              `json:"set_order"`
 	WeightKg     pgtype.Numeric     `json:"weight_kg"`
-	Reps         pgtype.Int4        `json:"reps"`
+	Reps         int32              `json:"reps"`
 	Rir          pgtype.Numeric     `json:"rir"`
 	Rpe          pgtype.Numeric     `json:"rpe"`
 	StartedAt    pgtype.Timestamptz `json:"started_at"`
 }
 
-func (q *Queries) ListLatestSetsByMenu(ctx context.Context, arg ListLatestSetsByMenuParams) ([]ListLatestSetsByMenuRow, error) {
-	rows, err := q.db.Query(ctx, listLatestSetsByMenu, arg.MenuID, arg.UserID)
+func (q *Queries) ListSetsByWorkoutAndExercises(ctx context.Context, arg ListSetsByWorkoutAndExercisesParams) ([]ListSetsByWorkoutAndExercisesRow, error) {
+	rows, err := q.db.Query(ctx, listSetsByWorkoutAndExercises, arg.WorkoutID, arg.ExerciseIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListLatestSetsByMenuRow{}
+	items := []ListSetsByWorkoutAndExercisesRow{}
 	for rows.Next() {
-		var i ListLatestSetsByMenuRow
+		var i ListSetsByWorkoutAndExercisesRow
 		if err := rows.Scan(
 			&i.ExerciseID,
 			&i.ExerciseName,
+			&i.SetOrder,
 			&i.WeightKg,
 			&i.Reps,
 			&i.Rir,
