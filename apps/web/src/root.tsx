@@ -1,6 +1,8 @@
 import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/react-router";
 import { rootAuthLoader } from "@clerk/react-router/ssr.server";
+import { useState } from "react";
 import {
+  Link,
   Links,
   Meta,
   Outlet,
@@ -11,6 +13,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { Button } from "./components/ui/button";
 
 export async function loader(args: Route.LoaderArgs) {
   return rootAuthLoader(args);
@@ -48,21 +51,86 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <ClerkProvider
       loaderData={loaderData}
       signUpFallbackRedirectUrl="/"
       signInFallbackRedirectUrl="/"
     >
-      <header className="flex items-center justify-center py-8 px-4">
-        <SignedOut>
-          <SignInButton />
-        </SignedOut>
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
+      <header className="flex items-center justify-between py-4 px-4 border-b">
+        <Link to="/" className="text-xl font-bold text-gray-800">
+          BulkTrack
+        </Link>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500"
+            aria-label="メニューを開閉する"
+            aria-expanded={isMenuOpen}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6"
+            >
+              <title>メニューを開閉</title>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+              />
+            </svg>
+          </button>
+
+          {/* ドロップダウンメニュー */}
+          {isMenuOpen && (
+            <div
+              className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              role="menu"
+              aria-orientation="vertical"
+              aria-labelledby="user-menu-button"
+              tabIndex={-1}
+            >
+              <SignedOut>
+                <div className="px-1 py-1">
+                  <SignInButton>
+                    <button
+                      type="button"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      ログイン
+                    </button>
+                  </SignInButton>
+                </div>
+              </SignedOut>
+              <SignedIn>
+                <div className="px-1 py-1">
+                  <Link
+                    to="/mypage"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    role="menuitem"
+                    tabIndex={-1}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    マイページ
+                  </Link>
+                </div>
+              </SignedIn>
+            </div>
+          )}
+        </div>
       </header>
-      <main>
+      <main className="pt-4 pb-8 px-4">
         <Outlet />
       </main>
     </ClerkProvider>
