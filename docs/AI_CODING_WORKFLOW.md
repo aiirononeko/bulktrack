@@ -33,6 +33,12 @@
 2. 非機能要件（性能目標、セキュリティ制約）
 3. 外部依存とバージョン制約
 機能: "ワークアウトセッションを Google Sheets に CSV エクスポートする"
+
+リポジトリURL
+https://github.com/aiirononeko/bulktrack
+
+rules
+https://github.com/aiirononeko/bulktrack/blob/main/.clinerules
 ```
 
 </details>
@@ -47,6 +53,12 @@ Produce a **Markdown spec** containing:
 2. Non‑functional requirements (performance budgets, security constraints)
 3. External dependencies & version constraints
 Feature: "Export workout sessions to Google Sheets as CSV".
+
+Repository URL
+https://github.com/aiirononeko/bulktrack
+
+rules
+https://github.com/aiirononeko/bulktrack/blob/main/.clinerules
 ```
 
 </details>
@@ -65,19 +77,28 @@ Feature: "Export workout sessions to Google Sheets as CSV".
 
 ````text
 ### Context
-- Tech Stack: React 19 / React‑Router 7 (framework) / Cloudflare Workers / Go 1.24
-- Out‑of‑scope: scripts/, infra/
+- Tech Stack: React 19 / React-Router 7 (framework) / Cloudflare Workers / Go 1.24
+- Out-of-scope: scripts/, infra/
 - Lint/Type rules: follow .clinerules v1.1
 
-### Task
-1. Create `apps/web/src/components/ExportDialog.tsx` ...
-2. Update `apps/web/src/routes/dashboard.tsx` to use it.
+### Goal
+Create an <ExportDialog> component and integrate it into Dashboard.
+
+### Files to create/update
+- Create: apps/web/src/components/ExportDialog.tsx
+- Update: apps/web/src/routes/dashboard.tsx
+- Do NOT touch: **apps/web/wrangler.toml**
+
+### Edge-case tests
+- Empty workouts list exports an empty CSV with only headers
+- Non-ASCII exercise names round-trip correctly
 
 ### Acceptance
 - `pnpm test --filter export-dialog` passes
-- CLS ≤ 0.1 (Web‑Vitals)
+- CLS ≤ 0.1 (Web-Vitals)
 
-### Self‑check
+### Self-check
+Run:
 ```bash
 pnpm lint && pnpm typecheck && pnpm test
 ````

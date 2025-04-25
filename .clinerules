@@ -1,33 +1,32 @@
-以下のテンプレートは **BulkTrack** リポジトリ（`aiirononeko/bulktrack`）の実コードを調べて作った **“最小で動く `.clinerules`”** です。  
-README が古い箇所もありましたが、`package.json`・`go.mod`・`pnpm-workspace.yaml`・デプロイスクリプトを優先して反映しています。citeturn4view0turn6view0turn7view0turn10view0
-
----
-
-```markdown
 # .clinerules – BulkTrack (mono-repo)
 
 ## 0. Modes
-| Mode | Purpose | Auto-switch Trigger |
+| Mode | Purpose | Auto‑switch Trigger |
 |------|---------|---------------------|
 | PM        | 要件定義・タスク分割         | `cline plan` 実行時 |
 | Architect | 技術設計・依存選定           | Plan 承認後 |
 | Code      | 実装・テスト                  | ファイル編集開始 |
-| PMO       | Self-Review・CI 対応          | `cline act` 完了 or CI Fail |
+| PMO       | Self‑Review・CI 対応          | `cline act` 完了 or CI Fail |
 
 ## 1. Tech Stack
+<details><summary>クリックして展開</summary>
+
 ### Frontend `apps/web`
 - React **19** / React Router **7.5.0** (Framework Mode)
 - Vite 5 + Cloudflare Workers (Modules)  
 - TypeScript 5.7 / Tailwind CSS 4 / shadcn/ui  
 - Clerk SDK（@clerk/react-router） for auth
+
 ### Backend `apps/api`
 - Go **1.24**
 - Chi Router / pgx v5 / sqlc v2  
 - Fly.io machines deploy  
 - Postgres (Neon)  
+
 ### Shared
 - pnpm Workspaces (`apps/*`, `packages/*`)
 - Go Workspace (`go.work`)
+</details>
 
 ## 2. Directory Globs
 ```yaml
@@ -44,21 +43,26 @@ rules:
 
 ## 3. Global Guidelines
 1. **禁止操作**: `.env*`, `fly.toml`, `wrangler.{toml,jsonc}`, `*.pem` の編集・出力禁止。  
-2. **タスク粒度**: 1 タスク ≦ 300 LoC 差分。  
-3. **Self-Review 必須** (失敗時は自動修正 2 回まで):  
-   - FE `pnpm lint && pnpm typecheck && pnpm cf-typegen && pnpm test`  
-   - BE `go vet ./... && golangci-lint run && go test ./...`
+2. **タスク粒度**: 1 タスク ≦ 300 LoC 差分。  
+3. **Self‑Review 必須** *(PoC Testing セット)*:
+   - **Frontend**: `pnpm lint && pnpm typecheck && pnpm test`
+   - **Backend**: `go vet ./... && golangci-lint run --disable-all -E staticcheck && go test -v ./...`
+   - 失敗時は自動修正 ≤ 2 回
 
 ## 4. Frontend Rules
 - **Loader/Action Pattern** でデータ取得。`useEffect` での fetch は禁止。  
-- `pnpm cf-typegen` と `react-router typegen` を `prebuild` で実行し、型不整合が出たらビルド失敗させる。  
+- `pnpm cf-typegen` と `react-router typegen` を `prebuild` で実行し型不整合が出たらビルド失敗させる。  
 - Workers KV/DO を追加したら **`apps/web/wrangler.*` に差分を含める**。  
 - Tailwind: UI コンポーネントは shadcn/ui を優先。クラス競合は `tailwind-merge` を使用。
 
 ## 5. Backend Rules
 - すべての public 関数は `context.Context` を第一引数、エラーは `%w` でラップ。  
-- 外部呼び出しは `context.WithTimeout` ≤ 2 s。  
+- 外部呼び出しは `context.WithTimeout` ≤ 2 s。  
 - SQLC 生成後は `go test ./...` でコンパイル確認。  
+- **PoC 三点セット** に従ったテストを配置:
+  1. **Table‑Driven Unit Tests** (`*_test.go`) – アサーションは `go-cmp` 又は `testify`。
+  2. **HTTP Golden Tests** – `net/http/httptest` + ゴールデンファイルは `testdata/*.golden` に保存。
+  3. **Static Analysis Gate** – `go vet` と `golangci-lint staticcheck` を CI で必須。
 - デプロイは **`flyctl deploy --remote-only --strategy rolling`**。`scripts/deploy-api.sh` も更新すること。
 
 ## 6. Commit Message Convention
@@ -86,25 +90,14 @@ Prompt-History: {prompt_history}
 ```
 
 ## 8. CI Gate
-- GitHub Actions で FE/BE 並列実行。  
-- 失敗したジョブは PMO モードが **patch-only PR** を作成し再実行。
+- GitHub Actions で **FE/BE 並列実行**。  
+- **Backend ワークフロー** には以下のジョブを追加:
+  1. `go vet ./...`
+  2. `golangci-lint run --disable-all -E staticcheck`
+  3. `go test -v ./...`
+- 失敗したジョブは PMO モードが **patch‑only PR** を作成し再実行。
 
 ## 9. Rule Evolution
 1. タスク完了ごとに PMO が「振り返り & 改善案」を Markdown で出力。  
 2. 採用する改善だけを新しい PR で `.clinerules` に追記。  
 3. 月次で `.clinerules` → `rules/*.mdc` へ分割する棚卸しを検討。
-```
-
----
-
-### 🏃‍♂️ 運用フロー（Cline 専用）
-
-| Step | Command / Action | Outcome |
-|------|------------------|---------|
-| 1️⃣  Plan | `cline plan "Add workout-export feature"` | 要件とタスク分割を自動生成 |
-| 2️⃣  Review | 仕様確認＆粒度調整 | 手戻り防止 |
-| 3️⃣  Act | `cline act` (1 タスクずつ) | 実装 + Self-Review |
-| 4️⃣  Commit | Self-Review PASS → コミット (Conventional Commits) | 履歴品質担保 |
-| 5️⃣  PR  | PMO が PR をドラフト | 人間レビュー開始 |
-| 6️⃣  CI   | GitHub Actions 実行、失敗なら patch-only PR 提案 | 速攻リカバリ |
-| 7️⃣  Retro| 振り返り → ルール追記 PR | `.clinerules` を育成 |
