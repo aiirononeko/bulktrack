@@ -162,6 +162,7 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 
 	pgWorkoutID := pgtype.UUID{Bytes: workout.ID, Valid: true}
 	sets := make([]dto.SetView, 0)
+	var globalSetOrder int32 = 1 // Initialize global set order counter
 
 	// リクエストからエクササイズとセットの情報がある場合は、それを使用
 	if len(req.Exercises) > 0 {
@@ -264,14 +265,14 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 					}
 				}
 
-				// セットの順番
-				setOrder := int32(setIndex + 1)
+				// セットの順番 (Use global counter)
+				// setOrder := int32(setIndex + 1) // Remove local calculation
 
 				// デバッグログ: セット作成試行
 				s.logger.InfoContext(ctx, "Creating set in DB",
 					slog.Int("exercise_index", exerciseIndex),
 					slog.Int("set_index", setIndex),
-					slog.Int("set_order", int(setOrder)),
+					slog.Int("set_order", int(globalSetOrder)), // Log global order
 					slog.String("exercise_name", exerciseName),
 					slog.String("workout_id", workout.ID.String()))
 
@@ -279,7 +280,7 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 				createdSet, err := qtx.CreateSet(ctx, sqlc.CreateSetParams{
 					WorkoutID:  pgWorkoutID,
 					ExerciseID: pgExerciseID,
-					SetOrder:   setOrder,
+					SetOrder:   globalSetOrder, // Use global counter
 					WeightKg:   weightKg,
 					Reps:       set.Reps,
 					Rir:        rir,
@@ -291,8 +292,11 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 						slog.String("workout_id", workout.ID.String()),
 						slog.Int("exercise_index", exerciseIndex),
 						slog.Int("set_index", setIndex))
-					continue
+					return nil, fmt.Errorf("failed to create set [%d-%d]: %w", exerciseIndex, setIndex, err)
 				}
+
+				// Increment global set order counter
+				globalSetOrder++
 
 				// デバッグログ: セット作成成功
 				s.logger.InfoContext(ctx, "Set created in DB",
@@ -305,7 +309,7 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 				setView := dto.SetView{
 					ID:       createdSet.ID,
 					Exercise: exerciseName,
-					SetOrder: setOrder,
+					SetOrder: createdSet.SetOrder, // Use the order from the created set
 					WeightKg: set.WeightKg,
 					Reps:     set.Reps,
 				}
