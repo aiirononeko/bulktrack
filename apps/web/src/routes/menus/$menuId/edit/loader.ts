@@ -21,7 +21,7 @@ export async function loader(args: Route.LoaderArgs) {
     // APIクライアントを使用してメニュー詳細を取得
     const menu = await getMenu(args, menuId);
 
-    // メニューデータをフォーマット
+    // メニューデータをフォームに適した型に変換
     const formattedMenu = formatMenuFromApi(menu);
 
     return { menu: formattedMenu };

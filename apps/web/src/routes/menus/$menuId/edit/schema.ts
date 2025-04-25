@@ -16,7 +16,7 @@ export interface MenuDetailApiResponse {
   id: ID;
   name: string;
   description?: string;
-  menu_items?: MenuItemFromApi[];
+  items?: MenuItemFromApi[];
 }
 
 // フォーマット済みのメニュー型
@@ -40,7 +40,7 @@ export function formatMenuFromApi(menu: MenuDetailApiResponse): FormattedMenu {
     name: menu.name,
     description: menu.description || "",
     exercises:
-      menu.menu_items?.map((item) => ({
+      menu.items?.map((item) => ({
         id: item.exercise_id,
         sets: item.sets,
         reps: item.reps,
