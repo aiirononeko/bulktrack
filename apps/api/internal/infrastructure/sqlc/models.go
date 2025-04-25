@@ -5,6 +5,8 @@
 package sqlc
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -55,6 +57,18 @@ type Set struct {
 	Reps       int32          `json:"reps"`
 	Rir        pgtype.Numeric `json:"rir"`
 	Rpe        pgtype.Numeric `json:"rpe"`
+}
+
+type WeeklyVolume struct {
+	ID            uuid.UUID      `json:"id"`
+	UserID        string         `json:"user_id"`
+	WeekStartDate pgtype.Date    `json:"week_start_date"`
+	TotalVolume   pgtype.Numeric `json:"total_volume"`
+	EstOneRm      pgtype.Numeric `json:"est_one_rm"`
+	ExerciseCount int32          `json:"exercise_count"`
+	SetCount      int32          `json:"set_count"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 }
 
 type Workout struct {

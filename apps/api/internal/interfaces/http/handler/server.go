@@ -10,6 +10,7 @@ import (
 
 	"github.com/aiirononeko/bulktrack/apps/api/internal/application/query"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/di"
+	"github.com/aiirononeko/bulktrack/apps/api/internal/handler"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/dto"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/middleware"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/service"
@@ -22,7 +23,9 @@ type Server struct {
 	menuService           *service.MenuService
 	workoutService        *service.WorkoutService
 	exerciseService       *service.ExerciseService
+	volumeService         *service.VolumeService
 	latestSetQueryService query.LatestSetQueryService
+	volumeHandler         *handler.VolumeHandler
 	mux                   *http.ServeMux
 	logger                *slog.Logger
 }
@@ -33,14 +36,20 @@ func NewServer(container *di.Container) *Server {
 	menuService := service.NewMenuService(container.DB, container.Logger)
 	workoutService := service.NewWorkoutService(container.DB, container.Logger)
 	exerciseService := service.NewExerciseService(container.DB, container.Logger)
+	volumeService := service.NewVolumeService(container.DB, container.Logger)
 	latestSetQueryService := query.NewLatestSetQueryService(container.DB, container.Logger)
+
+	// ハンドラーの初期化
+	volumeHandler := handler.NewVolumeHandler(volumeService, container.Logger)
 
 	s := &Server{
 		container:             container,
 		menuService:           menuService,
 		workoutService:        workoutService,
 		exerciseService:       exerciseService,
+		volumeService:         volumeService,
 		latestSetQueryService: latestSetQueryService,
+		volumeHandler:         volumeHandler,
 		mux:                   http.NewServeMux(),
 		logger:                container.Logger,
 	}
@@ -70,6 +79,9 @@ func NewServer(container *di.Container) *Server {
 
 	// 種目 - 認証必須
 	s.mux.Handle("GET /exercises", logging(auth(http.HandlerFunc(s.handleListExercises))))
+
+	// 週間ボリューム関連のルート登録
+	s.volumeHandler.RegisterRoutes(s.mux, logging, auth)
 
 	return s
 }

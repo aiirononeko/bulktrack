@@ -1,74 +1,8 @@
--- Schema definition for BulkTrack
+-- Migration to create weekly_volume table for aggregated training volume data
+-- This table will store pre-calculated weekly volume data to optimize dashboard performance
 
--- Enable UUID extension
+-- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- 部位マスター
-CREATE TABLE muscle_groups (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name TEXT UNIQUE NOT NULL
-);
-
--- 種目マスター
-CREATE TABLE exercises (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name TEXT UNIQUE NOT NULL,
-    main_target_muscle_group_id UUID REFERENCES muscle_groups(id),
-    is_custom BOOLEAN DEFAULT FALSE,
-    created_by_user_id TEXT, -- UUID REFERENCES users(id) ON DELETE SET NULL から変更
-    created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- 種目とサブターゲット部位の中間テーブル
-CREATE TABLE exercise_target_muscle_groups (
-    exercise_id UUID REFERENCES exercises(id) ON DELETE CASCADE,
-    muscle_group_id UUID REFERENCES muscle_groups(id) ON DELETE CASCADE,
-    PRIMARY KEY (exercise_id, muscle_group_id)
-);
-
--- training menus
-CREATE TABLE menus (
-  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id    TEXT NOT NULL, -- UUID REFERENCES users(id) ON DELETE CASCADE から変更
-  name       TEXT NOT NULL,
-  description TEXT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (user_id, name)
-);
-
--- menu_items: planned sets per menu (修正後)
-CREATE TABLE menu_items (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  menu_id     UUID REFERENCES menus(id) ON DELETE CASCADE,
-  exercise_id UUID REFERENCES exercises(id) ON DELETE RESTRICT, -- exercise TEXT NOT NULL から変更
-  set_order   INT  NOT NULL,
-  planned_sets INT, -- 追加
-  planned_reps INT,
-  planned_interval_seconds INT, -- 追加
-  UNIQUE (menu_id, set_order)
-);
-
--- workouts (actual sessions)
-CREATE TABLE workouts (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id      TEXT NOT NULL, -- UUID REFERENCES users(id) ON DELETE CASCADE から変更
-  menu_id      UUID REFERENCES menus(id), -- NULL許可（フリーワークアウトの場合）
-  started_at   TIMESTAMPTZ DEFAULT now(),
-  note         TEXT
-);
-
--- sets (actual performance)
-CREATE TABLE sets (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  workout_id  UUID REFERENCES workouts(id) ON DELETE CASCADE,
-  exercise_id UUID REFERENCES exercises(id) ON DELETE RESTRICT, -- exercise TEXT NOT NULL から変更
-  set_order   INT  NOT NULL,
-  weight_kg   NUMERIC(5,2) NOT NULL,
-  reps        INT NOT NULL,
-  rir         NUMERIC(3,1), -- デフォルトで使用 (Nullable)
-  rpe         NUMERIC(3,1), -- 選択的に使用 (Nullable)
-  UNIQUE (workout_id, set_order)
-);
 
 -- Create weekly_volume table for storing aggregated weekly training data
 CREATE TABLE weekly_volumes (

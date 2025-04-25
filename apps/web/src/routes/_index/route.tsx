@@ -1,11 +1,38 @@
-import { Link, useLoaderData } from "react-router";
-
+import { Link, useLoaderData, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
 import { VolumeDashboard } from "./components/volume-dashboard";
-
 import { loader } from "./loader";
+import { APIError } from "~/lib/api-client";
 
 export default function Component() {
-  const { weeklyVolumes } = useLoaderData<typeof loader>();
+  const { weeklyVolumes, stats, settings, isOffline } = useLoaderData<typeof loader>();
+  const [error, setError] = useState<Error | null>(null);
+  const navigate = useNavigate();
+
+  // ネットワーク状態の監視
+  useEffect(() => {
+    const handleOnline = () => {
+      // オンラインに戻ったらページを再読み込み
+      navigate(".", { replace: true });
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [navigate]);
+
+  // エラーハンドリング
+  useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      setError(new Error(e.message));
+    };
+
+    window.addEventListener("error", handleError);
+    return () => {
+      window.removeEventListener("error", handleError);
+    };
+  }, []);
 
   return (
     <div className="pt-4 px-4 space-y-6 max-w-screen-lg mx-auto pb-12">
@@ -15,7 +42,13 @@ export default function Component() {
       </div>
 
       {/* VolumeDashboardコンポーネントを表示 */}
-      <VolumeDashboard weeklyVolumes={weeklyVolumes} />
+      <VolumeDashboard
+        weeklyVolumes={weeklyVolumes}
+        stats={stats}
+        settings={settings}
+        isOffline={isOffline}
+        error={error}
+      />
 
       {/* トレーニング開始とメニュー管理へのボタン風リンク */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

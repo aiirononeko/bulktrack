@@ -23,10 +23,23 @@ type Querier interface {
 	DeleteSet(ctx context.Context, id uuid.UUID) error
 	DeleteWorkout(ctx context.Context, id uuid.UUID) error
 	GetExercise(ctx context.Context, id uuid.UUID) (Exercise, error)
+	// Get the most recent weekly volume for a user
+	GetLatestWeeklyVolume(ctx context.Context, userID string) (WeeklyVolume, error)
 	GetLatestWorkoutIDByMenu(ctx context.Context, arg GetLatestWorkoutIDByMenuParams) (uuid.UUID, error)
 	GetMenu(ctx context.Context, id uuid.UUID) (Menu, error)
 	GetMenuItem(ctx context.Context, id uuid.UUID) (MenuItem, error)
 	GetSet(ctx context.Context, id uuid.UUID) (Set, error)
+	// Get weekly volumes broken down by exercise for a specific user and week
+	GetWeeklyVolumeByExercise(ctx context.Context, arg GetWeeklyVolumeByExerciseParams) ([]GetWeeklyVolumeByExerciseRow, error)
+	// Get weekly volumes broken down by muscle group for a specific user and week
+	GetWeeklyVolumeByMuscleGroup(ctx context.Context, arg GetWeeklyVolumeByMuscleGroupParams) ([]GetWeeklyVolumeByMuscleGroupRow, error)
+	// Get weekly volume for a specific user and week
+	GetWeeklyVolumeForWeek(ctx context.Context, arg GetWeeklyVolumeForWeekParams) (WeeklyVolume, error)
+	// Get statistics about weekly volumes for a user
+	GetWeeklyVolumeStats(ctx context.Context, arg GetWeeklyVolumeStatsParams) (GetWeeklyVolumeStatsRow, error)
+	// Get weekly volumes for a user for the specified number of weeks
+	// Returns data for the last N weeks, filling in zeros for weeks with no data
+	GetWeeklyVolumes(ctx context.Context, arg GetWeeklyVolumesParams) ([]GetWeeklyVolumesRow, error)
 	GetWorkout(ctx context.Context, id uuid.UUID) (Workout, error)
 	ListExercises(ctx context.Context) ([]ListExercisesRow, error)
 	ListMenuItemsByMenu(ctx context.Context, menuID pgtype.UUID) ([]ListMenuItemsByMenuRow, error)
@@ -34,6 +47,8 @@ type Querier interface {
 	ListSetsByWorkout(ctx context.Context, workoutID pgtype.UUID) ([]ListSetsByWorkoutRow, error)
 	ListSetsByWorkoutAndExercises(ctx context.Context, arg ListSetsByWorkoutAndExercisesParams) ([]ListSetsByWorkoutAndExercisesRow, error)
 	ListWorkoutsByUser(ctx context.Context, userID string) ([]Workout, error)
+	// Manually recalculate weekly volume for a specific user and week
+	RecalculateWeeklyVolume(ctx context.Context, arg RecalculateWeeklyVolumeParams) error
 	UpdateMenu(ctx context.Context, arg UpdateMenuParams) (Menu, error)
 	UpdateMenuItem(ctx context.Context, arg UpdateMenuItemParams) (MenuItem, error)
 	UpdateSet(ctx context.Context, arg UpdateSetParams) (Set, error)
