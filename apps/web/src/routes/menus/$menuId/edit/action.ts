@@ -1,9 +1,14 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
 
-import { updateMenu } from "~/lib/api";
+import { type MenuUpdateRequest, updateMenu } from "~/lib/api";
 import type { Route } from "./+types/route";
-import { type FormErrors, MenuUpdateSchema } from "./schema";
+import {
+  type FormErrors,
+  type MenuUpdateData,
+  MenuUpdateSchema,
+  toMenuUpdateRequest,
+} from "./schema";
 
 export async function action(args: Route.ActionArgs) {
   // 認証チェック
@@ -33,13 +38,17 @@ export async function action(args: Route.ActionArgs) {
     if (formattedErrors.name?._errors) errors.name = formattedErrors.name._errors;
     if (formattedErrors.description?._errors)
       errors.description = formattedErrors.description._errors;
+    if (formattedErrors.items?._errors) errors.items = formattedErrors.items._errors;
 
     return { errors };
   }
 
   try {
-    // バリデーション済みデータでメニューを更新
-    await updateMenu(args, menuId, result.data);
+    // バリデーション済みデータをAPI用のリクエストデータに変換
+    const updateData: MenuUpdateRequest = toMenuUpdateRequest(result.data);
+
+    // 変換後のデータでメニューを更新
+    await updateMenu(args, menuId, updateData);
 
     // 成功時はメニュー一覧にリダイレクト
     return redirect("/menus");

@@ -9,6 +9,13 @@ type CreateMenuRequest struct {
 	Items       []MenuItemInput `json:"items"`
 }
 
+// MenuUpdateRequest はメニュー更新リクエストを表す
+type MenuUpdateRequest struct {
+	Name        string          `json:"name"`
+	Description *string         `json:"description,omitempty"`
+	Items       []MenuItemInput `json:"items"`
+}
+
 // MenuItemInput はメニュー項目の入力を表す
 type MenuItemInput struct {
 	ExerciseID             uuid.UUID `json:"exercise_id"`

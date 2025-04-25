@@ -19,6 +19,7 @@ type Querier interface {
 	CreateWorkout(ctx context.Context, arg CreateWorkoutParams) (Workout, error)
 	DeleteMenu(ctx context.Context, id uuid.UUID) error
 	DeleteMenuItem(ctx context.Context, id uuid.UUID) error
+	DeleteMenuItems(ctx context.Context, menuID pgtype.UUID) error
 	DeleteSet(ctx context.Context, id uuid.UUID) error
 	DeleteWorkout(ctx context.Context, id uuid.UUID) error
 	GetExercise(ctx context.Context, id uuid.UUID) (Exercise, error)

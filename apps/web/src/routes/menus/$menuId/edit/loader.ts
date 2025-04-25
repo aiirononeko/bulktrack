@@ -1,9 +1,9 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
 
-import { getMenu } from "~/lib/api";
+import { getExercises, getMenu } from "~/lib/api";
+
 import type { Route } from "./+types/route";
-import { formatMenuFromApi } from "./schema";
 
 export async function loader(args: Route.LoaderArgs) {
   // 認証チェック
@@ -18,13 +18,13 @@ export async function loader(args: Route.LoaderArgs) {
   }
 
   try {
-    // APIクライアントを使用してメニュー詳細を取得
+    // メニュー詳細を取得
     const menu = await getMenu(args, menuId);
 
-    // メニューデータをフォームに適した型に変換
-    const formattedMenu = formatMenuFromApi(menu);
+    // 種目一覧を取得
+    const exercises = await getExercises(args);
 
-    return { menu: formattedMenu };
+    return { menu, exercises };
   } catch (error) {
     console.error(`Error fetching menu ${menuId}:`, error);
 

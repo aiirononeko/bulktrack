@@ -62,6 +62,16 @@ func (q *Queries) DeleteMenuItem(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteMenuItems = `-- name: DeleteMenuItems :exec
+DELETE FROM menu_items
+WHERE menu_id = $1
+`
+
+func (q *Queries) DeleteMenuItems(ctx context.Context, menuID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteMenuItems, menuID)
+	return err
+}
+
 const getMenuItem = `-- name: GetMenuItem :one
 SELECT id, menu_id, exercise_id, set_order, planned_sets, planned_reps, planned_interval_seconds FROM menu_items
 WHERE id = $1 LIMIT 1

@@ -6,7 +6,7 @@ import { action } from "./action";
 import { loader } from "./loader";
 
 export default function EditMenuRoute() {
-  const { menu } = useLoaderData<typeof loader>();
+  const { menu, exercises } = useLoaderData<typeof loader>();
 
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -15,7 +15,7 @@ export default function EditMenuRoute() {
     <div>
       <h1 className="text-2xl font-bold mb-6">メニュー編集</h1>
       <p className="text-sm text-muted-foreground mb-4">メニューの内容を編集します。</p>
-      <MenuForm initialData={menu} exercises={menu.exercises} isSubmitting={isSubmitting} />
+      <MenuForm initialData={menu} exercises={exercises} isSubmitting={isSubmitting} />
     </div>
   );
 }

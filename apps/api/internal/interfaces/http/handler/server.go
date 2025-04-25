@@ -57,6 +57,7 @@ func NewServer(container *di.Container) *Server {
 	s.mux.Handle("POST /menus", logging(auth(http.HandlerFunc(s.handleCreateMenu))))
 	s.mux.Handle("GET /menus/{id}", logging(auth(http.HandlerFunc(s.handleGetMenu))))
 	s.mux.Handle("DELETE /menus/{id}", logging(auth(http.HandlerFunc(s.handleDeleteMenu))))
+	s.mux.Handle("PUT /menus/{id}", logging(auth(http.HandlerFunc(s.handleUpdateMenu))))
 	s.mux.Handle("GET /menus/{id}/exercises/last-records", logging(auth(http.HandlerFunc(s.handleGetLastRecords))))
 
 	// ワークアウト - 認証必須
@@ -449,4 +450,61 @@ func (s *Server) handleGetLastRecords(w http.ResponseWriter, r *http.Request) {
 	// レスポンス返却
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(records)
+}
+
+// メニュー更新ハンドラー
+func (s *Server) handleUpdateMenu(w http.ResponseWriter, r *http.Request) {
+	// メニューIDの取得
+	idStr := strings.TrimPrefix(r.URL.Path, "/menus/")
+	idStr = strings.TrimSuffix(idStr, "/")
+
+	menuID, err := uuid.Parse(idStr)
+	if err != nil {
+		s.logger.Warn("Invalid menu ID format for update", slog.String("path", r.URL.Path), slog.String("id_str", idStr), slog.Any("error", err))
+		http.Error(w, "Invalid menu ID", http.StatusBadRequest)
+		return
+	}
+
+	// コンテキストからユーザーIDを取得
+	userIDStr, ok := middleware.GetUserIDFromContext(r.Context())
+	if !ok {
+		s.logger.Error("User ID not found in context for menu update")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// リクエストボディの読み取り
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		s.logger.Error("Failed to read request body for update menu", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// リクエストのパース
+	var req dto.MenuUpdateRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		s.logger.Error("Failed to unmarshal request body for update menu",
+			slog.Any("error", err),
+			slog.String("menu_id", menuID.String()),
+			slog.String("body", string(body)))
+		http.Error(w, "Invalid request format: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// メニュー更新
+	resp, err := s.menuService.UpdateMenu(r.Context(), menuID, req)
+	if err != nil {
+		s.logger.Error("Failed to update menu",
+			slog.Any("error", err),
+			slog.String("menu_id", menuID.String()),
+			slog.String("user_id", userIDStr))
+		http.Error(w, fmt.Sprintf("Failed to update menu: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンス返却
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }

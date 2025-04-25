@@ -74,12 +74,12 @@ export function MenuForm({ initialData, isSubmitting, exercises }: MenuFormProps
     if (!initialData?.items) return [];
 
     return initialData.items.map((item, index) => ({
-      id: crypto.randomUUID(),
-      exercise_id: item.exercise,
+      id: item.id ?? crypto.randomUUID(),
+      exercise_id: item.exercise_id,
       set_order: item.set_order ?? index + 1,
-      planned_sets: null,
+      planned_sets: item.planned_sets ?? null,
       planned_reps: item.planned_reps ?? null,
-      planned_interval_seconds: null,
+      planned_interval_seconds: item.planned_interval_seconds ?? null,
     }));
   });
 

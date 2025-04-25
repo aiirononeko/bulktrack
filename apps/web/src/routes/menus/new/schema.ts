@@ -45,18 +45,18 @@ export function toMenuCreateRequest(formData: MenuFormData): MenuCreateRequest {
   const { name, description, items } = formData;
 
   // 種目データをAPIの形式に変換
-  const exercises = items.map((item: MenuItemInput) => ({
+  const mappedItems = items.map((item: MenuItemInput) => ({
     exercise_id: item.exercise_id,
-    position: item.set_order,
-    sets: item.planned_sets || undefined,
-    reps: item.planned_reps || undefined,
-    rest_time: item.planned_interval_seconds || undefined,
+    set_order: item.set_order,
+    planned_sets: item.planned_sets ?? undefined,
+    planned_reps: item.planned_reps ?? undefined,
+    planned_interval_seconds: item.planned_interval_seconds ?? undefined,
   }));
 
   return {
     name,
-    description,
-    exercises: exercises.length > 0 ? exercises : undefined,
+    description: description || undefined,
+    items: mappedItems.length > 0 ? mappedItems : [],
   };
 }
 

@@ -113,6 +113,7 @@ func (s *MenuService) CreateMenu(ctx context.Context, req dto.CreateMenuRequest,
 
 		pgMenuID := pgtype.UUID{Bytes: menu.ID, Valid: true}
 
+		// menuItem, err := qtx.CreateMenuItem(ctx, createItemParams) // パラメータを渡す -> 元に戻す
 		menuItem, err := qtx.CreateMenuItem(ctx, sqlc.CreateMenuItemParams{
 			MenuID:                 pgMenuID,
 			ExerciseID:             pgExerciseID,
@@ -255,8 +256,9 @@ func (s *MenuService) DeleteMenu(ctx context.Context, menuID uuid.UUID) (err err
 	qtx := sqlc.New(tx)
 
 	// メニュー項目の削除（外部キー制約があるため、先に削除）
-	if err = qtx.DeleteMenuItem(ctx, menuID); err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute DeleteMenuItem query", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+	pgMenuID := pgtype.UUID{Bytes: menuID, Valid: true}
+	if err = qtx.DeleteMenuItems(ctx, pgMenuID); err != nil {
+		s.logger.ErrorContext(ctx, "Failed to execute DeleteMenuItems query", slog.Any("error", err), slog.String("menu_id", menuID.String()))
 		return err
 	}
 
@@ -272,6 +274,7 @@ func (s *MenuService) DeleteMenu(ctx context.Context, menuID uuid.UUID) (err err
 		return err
 	}
 
+	s.logger.InfoContext(ctx, "Menu deleted successfully", slog.String("menu_id", menuID.String()))
 	return nil
 }
 
@@ -333,4 +336,162 @@ func (s *MenuService) ListMenusByUser(ctx context.Context, userID string) ([]dto
 	}
 
 	return result, nil
+}
+
+// UpdateMenu はメニューを更新する
+func (s *MenuService) UpdateMenu(ctx context.Context, menuID uuid.UUID, req dto.MenuUpdateRequest) (*dto.MenuResponse, error) {
+	// トランザクション開始
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to begin transaction for UpdateMenu", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+		return nil, err
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			s.logger.ErrorContext(ctx, "Recovered in UpdateMenu, rolling back transaction", slog.Any("panic_value", r), slog.String("menu_id", menuID.String()))
+			tx.Rollback(ctx)
+			panic(r)
+		} else if err != nil {
+			rollErr := tx.Rollback(ctx)
+			if rollErr != nil {
+				s.logger.ErrorContext(ctx, "Failed to rollback transaction for UpdateMenu", slog.Any("rollback_error", rollErr), slog.Any("original_error", err), slog.String("menu_id", menuID.String()))
+			}
+		}
+	}()
+
+	qtx := sqlc.New(tx)
+
+	// メニュー基本情報の更新
+	pgDescription := ptrStringToPgtypeText(req.Description)
+	pgMenuID := pgtype.UUID{Bytes: menuID, Valid: true}
+
+	menu, err := qtx.UpdateMenu(ctx, sqlc.UpdateMenuParams{
+		ID:          menuID,
+		Name:        req.Name,
+		Description: pgDescription,
+	})
+	if err != nil {
+		s.logger.ErrorContext(ctx, "Failed to execute UpdateMenu query", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+		return nil, err
+	}
+
+	// req.Itemsが空でない場合のみ既存のメニュー項目を削除して再作成
+	items := make([]dto.MenuItemView, 0)
+	if len(req.Items) > 0 {
+		// 既存のメニュー項目を削除
+		if err = qtx.DeleteMenuItems(ctx, pgMenuID); err != nil {
+			s.logger.ErrorContext(ctx, "Failed to delete existing menu items", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+			return nil, err
+		}
+
+		// 新しいメニュー項目を作成
+		items = make([]dto.MenuItemView, 0, len(req.Items))
+		for i, item := range req.Items {
+			pgExerciseID := pgtype.UUID{Bytes: item.ExerciseID, Valid: true}
+
+			// Nullable フィールドの変換 (pgtype.Int4)
+			var pgPlannedSets pgtype.Int4
+			if item.PlannedSets != nil {
+				pgPlannedSets = pgtype.Int4{Int32: *item.PlannedSets, Valid: true}
+			}
+			var pgPlannedReps pgtype.Int4
+			if item.PlannedReps != nil {
+				pgPlannedReps = pgtype.Int4{Int32: *item.PlannedReps, Valid: true}
+			}
+			var pgPlannedIntervalSeconds pgtype.Int4
+			if item.PlannedIntervalSeconds != nil {
+				pgPlannedIntervalSeconds = pgtype.Int4{Int32: *item.PlannedIntervalSeconds, Valid: true}
+			}
+
+			menuItem, err := qtx.CreateMenuItem(ctx, sqlc.CreateMenuItemParams{
+				MenuID:                 pgMenuID,
+				ExerciseID:             pgExerciseID,
+				SetOrder:               item.SetOrder,
+				PlannedSets:            pgPlannedSets,
+				PlannedReps:            pgPlannedReps,
+				PlannedIntervalSeconds: pgPlannedIntervalSeconds,
+			})
+			if err != nil {
+				s.logger.ErrorContext(ctx, "Failed to execute CreateMenuItem query during update", slog.Any("error", err), slog.String("menu_id", menuID.String()), slog.Int("item_index", i))
+				return nil, err
+			}
+
+			// ExerciseName を取得
+			exercise, err := qtx.GetExercise(ctx, menuItem.ExerciseID.Bytes)
+			var exerciseName string
+			if err != nil {
+				s.logger.WarnContext(ctx, "Failed to get exercise name for menu item", slog.Any("error", err), slog.String("exercise_id", uuid.UUID(menuItem.ExerciseID.Bytes).String()), slog.String("menu_item_id", menuItem.ID.String()))
+				exerciseName = "不明な種目"
+			} else {
+				exerciseName = exercise.Name
+			}
+
+			// DTO に変換
+			itemView := dto.MenuItemView{
+				ID:           menuItem.ID,
+				ExerciseID:   menuItem.ExerciseID.Bytes,
+				ExerciseName: exerciseName,
+				SetOrder:     menuItem.SetOrder,
+			}
+			if menuItem.PlannedSets.Valid {
+				val := menuItem.PlannedSets.Int32
+				itemView.PlannedSets = &val
+			}
+			if menuItem.PlannedReps.Valid {
+				val := menuItem.PlannedReps.Int32
+				itemView.PlannedReps = &val
+			}
+			if menuItem.PlannedIntervalSeconds.Valid {
+				val := menuItem.PlannedIntervalSeconds.Int32
+				itemView.PlannedIntervalSeconds = &val
+			}
+			items = append(items, itemView)
+		}
+	} else {
+		// req.Itemsが空の場合は既存のメニュー項目を保持
+		menuItems, err := qtx.ListMenuItemsByMenu(ctx, pgMenuID)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "Failed to list existing menu items", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+			return nil, err
+		}
+
+		// 既存のメニュー項目をDTOに変換
+		items = make([]dto.MenuItemView, 0, len(menuItems))
+		for _, item := range menuItems {
+			itemView := dto.MenuItemView{
+				ID:           item.ID,
+				ExerciseID:   item.ExerciseID.Bytes,
+				ExerciseName: item.ExerciseName,
+				SetOrder:     item.SetOrder,
+			}
+			if item.PlannedSets.Valid {
+				val := item.PlannedSets.Int32
+				itemView.PlannedSets = &val
+			}
+			if item.PlannedReps.Valid {
+				val := item.PlannedReps.Int32
+				itemView.PlannedReps = &val
+			}
+			if item.PlannedIntervalSeconds.Valid {
+				val := item.PlannedIntervalSeconds.Int32
+				itemView.PlannedIntervalSeconds = &val
+			}
+			items = append(items, itemView)
+		}
+	}
+
+	// トランザクションコミット
+	if err = tx.Commit(ctx); err != nil {
+		s.logger.ErrorContext(ctx, "Failed to commit transaction for UpdateMenu", slog.Any("error", err), slog.String("menu_id", menuID.String()))
+		return nil, err
+	}
+
+	// レスポンス作成
+	return &dto.MenuResponse{
+		ID:          menu.ID,
+		Name:        menu.Name,
+		Description: pgtypeTextToPtrString(menu.Description),
+		CreatedAt:   menu.CreatedAt.Time.Format(time.RFC3339),
+		Items:       items,
+	}, nil
 }

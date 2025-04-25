@@ -26,3 +26,7 @@ RETURNING id, menu_id, exercise_id, set_order, planned_sets, planned_reps, plann
 -- name: DeleteMenuItem :exec
 DELETE FROM menu_items
 WHERE id = $1;
+
+-- name: DeleteMenuItems :exec
+DELETE FROM menu_items
+WHERE menu_id = $1;
