@@ -13,7 +13,9 @@ import (
 	"github.com/aiirononeko/bulktrack/apps/api/internal/config"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/db"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/di"
+	httpError "github.com/aiirononeko/bulktrack/apps/api/internal/http"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/handler"
+	"github.com/aiirononeko/bulktrack/apps/api/internal/validation"
 )
 
 func main() {
@@ -55,13 +57,19 @@ func main() {
 	// DIコンテナ作成 (NewContainer の引数を修正)
 	container := di.NewContainer(cfg, dbConn, logger)
 
+	// バリデータの作成と設定
+	container.Validator = validation.New()
+
 	// HTTPサーバーハンドラ作成
 	serverHandler := handler.NewServer(container) // NewServer に Container を渡す
+
+	// エラーハンドラーを適用
+	errorHandler := httpError.ErrorHandler(serverHandler)
 
 	// HTTPサーバー設定
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
-		Handler:      serverHandler, // ここで Server を Handler として設定
+		Handler:      errorHandler, // エラーハンドラーを適用したハンドラを設定
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
