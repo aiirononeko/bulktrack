@@ -98,10 +98,10 @@ export function VolumeDashboard({
         </CardHeader>
         <CardContent>
           {/* チャートコントロール */}
-          <ChartControls settings={settings} onExportCSV={handleExportCSV} />
+          {/* <ChartControls settings={settings} onExportCSV={handleExportCSV} /> */}
 
           {/* チャート/リスト表示切替 */}
-          <Tabs defaultValue="chart" className="mt-4">
+          <Tabs defaultValue="chart" className="">
             <TabsList className="grid w-full max-w-xs grid-cols-2">
               <TabsTrigger value="chart">グラフ</TabsTrigger>
               <TabsTrigger value="list">リスト</TabsTrigger>

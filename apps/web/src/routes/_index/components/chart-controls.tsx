@@ -1,10 +1,10 @@
+import { BarChart3, Download, LineChart } from "lucide-react";
 import * as React from "react";
 import { useNavigate } from "react-router";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
-import { BarChart3, LineChart, Download } from "lucide-react";
-import type { DashboardSettings, ChartPeriod, ChartType } from "../types";
+import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import type { ChartPeriod, ChartType, DashboardSettings } from "../types";
 
 type ChartControlsProps = {
   settings: DashboardSettings;
@@ -68,12 +68,7 @@ export function ChartControls({ settings, onExportCSV }: ChartControlsProps) {
         </RadioGroup>
       </div>
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="ml-auto"
-        onClick={onExportCSV}
-      >
+      <Button variant="outline" size="sm" className="ml-auto" onClick={onExportCSV}>
         <Download size={16} className="mr-2" />
         CSVエクスポート
       </Button>

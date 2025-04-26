@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"time"
 
 	"github.com/aiirononeko/bulktrack/apps/api/internal/infrastructure/sqlc"
 	"github.com/aiirononeko/bulktrack/apps/api/internal/interfaces/http/dto"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 )
 
 // VolumeService は週間トレーニングボリューム関連のサービスを提供する
@@ -27,6 +27,23 @@ func NewVolumeService(pool *pgxpool.Pool, logger *slog.Logger) *VolumeService {
 		queries: sqlc.New(pool),
 		logger:  logger,
 	}
+}
+
+// numericToFloat64 は pgtype.Numeric を float64 に変換するヘルパー関数
+func numericToFloat64(ctx context.Context, logger *slog.Logger, n pgtype.Numeric) float64 {
+	if !n.Valid {
+		return 0 // NULLの場合は0を返す
+	}
+	if n.Int == nil {
+		return 0
+	}
+	d, err := decimal.NewFromString(n.Int.String())
+	if err != nil {
+		logger.WarnContext(ctx, "Failed to parse decimal from pgtype.Numeric Int", slog.Any("numeric", n), slog.Any("error", err))
+		return 0
+	}
+	f, _ := d.Shift(n.Exp).Float64()
+	return f
 }
 
 // GetWeeklyVolumes は指定されたユーザーの週間トレーニングボリュームを取得する
@@ -52,34 +69,21 @@ func (s *VolumeService) GetWeeklyVolumes(ctx context.Context, userID string, wee
 	// レスポンスの作成
 	summaries := make([]dto.WeeklySummaryResponse, 0, len(volumes))
 	for _, volume := range volumes {
-		// Unix timestamp を time.Time に変換し、ISO形式の文字列に変換
-		// weekTime := time.Unix(volume.WeekStartDate, 0) // No longer needed
 		var weekStr string
-		if volume.WeekStartDate.Valid { // Check if pgtype.Date is valid
-			weekStr = volume.WeekStartDate.Time.Format(time.RFC3339) // Convert pgtype.Date to time.Time
-		} else {
-			// Handle invalid date if necessary, e.g., set to empty string or log error
+		if volume.WeekStartDate.Valid {
+			weekStr = volume.WeekStartDate.Time.Format(time.RFC3339)
 		}
 
-		// pgtype.Numeric を float64 に変換
-		var totalVolume, estOneRM float64
-
-		// TotalVolume の変換
-		if volume.TotalVolume.Valid {
-			totalVolumeStr := volume.TotalVolume.Int.String()
-			totalVolume, _ = strconv.ParseFloat(totalVolumeStr, 64)
-		}
-
-		// EstOneRM の変換
-		if volume.EstOneRm.Valid {
-			estOneRMStr := volume.EstOneRm.Int.String()
-			estOneRM, _ = strconv.ParseFloat(estOneRMStr, 64)
-		}
+		// pgtype.Numeric を float64 に変換 (decimalヘルパー使用)
+		totalVolume := numericToFloat64(ctx, s.logger, volume.TotalVolume)
+		estOneRM := numericToFloat64(ctx, s.logger, volume.EstOneRm)
 
 		summary := dto.WeeklySummaryResponse{
-			Week:        weekStr,
-			TotalVolume: totalVolume,
-			EstOneRM:    estOneRM,
+			Week:          weekStr,
+			TotalVolume:   totalVolume,
+			EstOneRM:      estOneRM,
+			ExerciseCount: int(volume.ExerciseCount),
+			SetCount:      int(volume.SetCount),
 		}
 		summaries = append(summaries, summary)
 	}
@@ -121,26 +125,17 @@ func (s *VolumeService) GetWeeklyVolumeForWeek(ctx context.Context, userID strin
 		return nil, fmt.Errorf("failed to get weekly volume for week: %w", err)
 	}
 
-	// pgtype.Numeric を float64 に変換
-	var totalVolume, estOneRM float64
-
-	// TotalVolume の変換
-	if volume.TotalVolume.Valid {
-		totalVolumeStr := volume.TotalVolume.Int.String()
-		totalVolume, _ = strconv.ParseFloat(totalVolumeStr, 64)
-	}
-
-	// EstOneRM の変換
-	if volume.EstOneRm.Valid {
-		estOneRMStr := volume.EstOneRm.Int.String()
-		estOneRM, _ = strconv.ParseFloat(estOneRMStr, 64)
-	}
+	// pgtype.Numeric を float64 に変換 (decimalヘルパー使用)
+	totalVolume := numericToFloat64(ctx, s.logger, volume.TotalVolume)
+	estOneRM := numericToFloat64(ctx, s.logger, volume.EstOneRm)
 
 	// レスポンスの作成
 	return &dto.WeeklySummaryResponse{
-		Week:        weekStart.Format(time.RFC3339),
-		TotalVolume: totalVolume,
-		EstOneRM:    estOneRM,
+		Week:          weekStart.Format(time.RFC3339),
+		TotalVolume:   totalVolume,
+		EstOneRM:      estOneRM,
+		ExerciseCount: int(volume.ExerciseCount),
+		SetCount:      int(volume.SetCount),
 	}, nil
 }
 
@@ -179,7 +174,7 @@ func (s *VolumeService) RecalculateWeeklyVolume(ctx context.Context, userID stri
 	return nil
 }
 
-// GetWeeklyVolumeStats は指定されたユーザーの週間トレーニングボリューム統計を取得する
+// GetWeeklyVolumeStats は指定されたユーザーと期間の週間トレーニングボリューム統計を取得する
 func (s *VolumeService) GetWeeklyVolumeStats(ctx context.Context, userID string, startDate, endDate time.Time) (*dto.WeeklyVolumeStatsResponse, error) {
 	// time.Time を pgtype.Date に変換
 	var pgStartDate, pgEndDate pgtype.Date
@@ -189,7 +184,7 @@ func (s *VolumeService) GetWeeklyVolumeStats(ctx context.Context, userID string,
 	pgEndDate.Time = endDate
 
 	// 週間ボリューム統計データの取得
-	stats, err := s.queries.GetWeeklyVolumeStats(ctx, sqlc.GetWeeklyVolumeStatsParams{
+	statsRow, err := s.queries.GetWeeklyVolumeStats(ctx, sqlc.GetWeeklyVolumeStatsParams{
 		UserID:    userID,
 		StartDate: pgStartDate,
 		EndDate:   pgEndDate,
@@ -202,53 +197,47 @@ func (s *VolumeService) GetWeeklyVolumeStats(ctx context.Context, userID string,
 			slog.Time("end_date", endDate))
 		return nil, fmt.Errorf("failed to get weekly volume stats: %w", err)
 	}
+	// ★ 修正点1: デバッグログ追加 (fmt.Println削除)
+	s.logger.DebugContext(ctx, "Raw stats data from DB", slog.Any("statsRow", statsRow))
 
-	// interface{} 型の値を float64 に変換
-	var maxWeeklyVolume, minWeeklyVolume, maxEstOneRm float64
+	// ★ 修正点2: 変換処理 (型スイッチ削除、decimalヘルパー使用)
+	var avgWeeklyVolume, maxWeeklyVolume, minWeeklyVolume, maxEstOneRm, avgExerciseCount, avgSetCount float64
 
-	// MaxWeeklyVolume の変換
-	if stats.MaxWeeklyVolume != nil {
-		switch v := stats.MaxWeeklyVolume.(type) {
-		case float64:
-			maxWeeklyVolume = v
-		case int64:
-			maxWeeklyVolume = float64(v)
-		case string:
-			maxWeeklyVolume, _ = strconv.ParseFloat(v, 64)
-		}
+	// AVG系は float64 で返ってくる
+	avgWeeklyVolume = statsRow.AvgWeeklyVolume
+	avgExerciseCount = statsRow.AvgExerciseCount
+	avgSetCount = statsRow.AvgSetCount
+
+	// MAX/MIN系は interface{} なので型アサーションと変換が必要
+	if maxVol, ok := statsRow.MaxWeeklyVolume.(pgtype.Numeric); ok {
+		maxWeeklyVolume = numericToFloat64(ctx, s.logger, maxVol)
+	} else if statsRow.MaxWeeklyVolume != nil {
+		s.logger.WarnContext(ctx, "Unexpected type for MaxWeeklyVolume", slog.Any("type", fmt.Sprintf("%T", statsRow.MaxWeeklyVolume)), slog.Any("value", statsRow.MaxWeeklyVolume))
 	}
 
-	// MinWeeklyVolume の変換
-	if stats.MinWeeklyVolume != nil {
-		switch v := stats.MinWeeklyVolume.(type) {
-		case float64:
-			minWeeklyVolume = v
-		case int64:
-			minWeeklyVolume = float64(v)
-		case string:
-			minWeeklyVolume, _ = strconv.ParseFloat(v, 64)
-		}
+	if minVol, ok := statsRow.MinWeeklyVolume.(pgtype.Numeric); ok {
+		minWeeklyVolume = numericToFloat64(ctx, s.logger, minVol)
+	} else if statsRow.MinWeeklyVolume != nil {
+		s.logger.WarnContext(ctx, "Unexpected type for MinWeeklyVolume", slog.Any("type", fmt.Sprintf("%T", statsRow.MinWeeklyVolume)), slog.Any("value", statsRow.MinWeeklyVolume))
 	}
 
-	// MaxEstOneRm の変換
-	if stats.MaxEstOneRm != nil {
-		switch v := stats.MaxEstOneRm.(type) {
-		case float64:
-			maxEstOneRm = v
-		case int64:
-			maxEstOneRm = float64(v)
-		case string:
-			maxEstOneRm, _ = strconv.ParseFloat(v, 64)
-		}
+	if max1rm, ok := statsRow.MaxEstOneRm.(pgtype.Numeric); ok {
+		maxEstOneRm = numericToFloat64(ctx, s.logger, max1rm)
+	} else if statsRow.MaxEstOneRm != nil {
+		s.logger.WarnContext(ctx, "Unexpected type for MaxEstOneRm", slog.Any("type", fmt.Sprintf("%T", statsRow.MaxEstOneRm)), slog.Any("value", statsRow.MaxEstOneRm))
 	}
 
 	// レスポンスの作成
-	return &dto.WeeklyVolumeStatsResponse{
-		AvgWeeklyVolume:  stats.AvgWeeklyVolume,
+	dtoResponse := &dto.WeeklyVolumeStatsResponse{
+		AvgWeeklyVolume:  avgWeeklyVolume,
 		MaxWeeklyVolume:  maxWeeklyVolume,
 		MinWeeklyVolume:  minWeeklyVolume,
 		MaxEstOneRM:      maxEstOneRm,
-		AvgExerciseCount: stats.AvgExerciseCount,
-		AvgSetCount:      stats.AvgSetCount,
-	}, nil
+		AvgExerciseCount: avgExerciseCount,
+		AvgSetCount:      avgSetCount,
+	}
+	// ★ 修正点3: デバッグログ追加 (fmt.Println削除)
+	s.logger.DebugContext(ctx, "Stats DTO after conversion", slog.Any("dto", dtoResponse))
+
+	return dtoResponse, nil
 }

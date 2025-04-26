@@ -3,12 +3,13 @@ module github.com/aiirononeko/bulktrack/apps/api
 go 1.24
 
 require (
+	github.com/clerk/clerk-sdk-go/v2 v2.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.5.5
+	github.com/shopspring/decimal v1.4.0
 )
 
 require (
-	github.com/clerk/clerk-sdk-go/v2 v2.3.1 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
