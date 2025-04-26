@@ -50,6 +50,15 @@ export default function Header() {
           </SignedOut>
           <SignedIn>
             <DropdownMenuItem asChild>
+              <Link to="/">ダッシュボード</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/workouts">トレーニング履歴</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/menus">メニュー管理</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link to="/mypage">マイページ</Link>
             </DropdownMenuItem>
           </SignedIn>

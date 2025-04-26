@@ -13,6 +13,8 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { Plus } from "lucide-react";
+import { Button } from "./components/ui/button";
 import Header from "./routes/components/header";
 
 export async function loader(args: Route.LoaderArgs) {
@@ -58,9 +60,21 @@ export default function App({ loaderData }: Route.ComponentProps) {
       signInFallbackRedirectUrl="/"
     >
       <Header />
-      <main className="pt-4 pb-8 px-4">
+      <main className="pt-4 pb-24 px-4">
         <Outlet />
       </main>
+      <SignedIn>
+        <Button
+          asChild
+          variant="default"
+          className="fixed bottom-6 right-6 rounded-full w-16 h-16 p-0 shadow-lg z-50 flex items-center justify-center"
+          aria-label="トレーニングを開始する"
+        >
+          <Link to="/workouts/new">
+            <Plus className="h-8 w-8 text-white" />
+          </Link>
+        </Button>
+      </SignedIn>
     </ClerkProvider>
   );
 }
