@@ -9,6 +9,7 @@ import {
   Scripts,
   ScrollRestoration,
   isRouteErrorResponse,
+  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -53,6 +54,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
+  const location = useLocation();
+  const shouldShowFab = !location.pathname.startsWith("/workouts/new");
+
   return (
     <ClerkProvider
       loaderData={loaderData}
@@ -63,18 +67,20 @@ export default function App({ loaderData }: Route.ComponentProps) {
       <main className="pt-4 pb-24 px-4">
         <Outlet />
       </main>
-      <SignedIn>
-        <Button
-          asChild
-          variant="default"
-          className="fixed bottom-6 right-6 rounded-full w-16 h-16 p-0 shadow-lg z-50 flex items-center justify-center"
-          aria-label="トレーニングを開始する"
-        >
-          <Link to="/workouts/new">
-            <Plus className="h-8 w-8 text-white" />
-          </Link>
-        </Button>
-      </SignedIn>
+      {shouldShowFab && (
+        <SignedIn>
+          <Button
+            asChild
+            variant="default"
+            className="fixed bottom-6 right-6 rounded-full w-16 h-16 p-0 shadow-lg z-50 flex items-center justify-center"
+            aria-label="トレーニングを開始する"
+          >
+            <Link to="/workouts/new">
+              <Plus className="h-8 w-8 text-white" />
+            </Link>
+          </Button>
+        </SignedIn>
+      )}
     </ClerkProvider>
   );
 }
