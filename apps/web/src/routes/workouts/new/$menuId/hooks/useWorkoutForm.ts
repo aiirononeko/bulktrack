@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useActionData, useSubmit } from "react-router";
+import type { Exercise } from "ts-utils/src/api/types/exercises";
 import type { ExerciseLastRecord, LastRecordData } from "ts-utils/src/api/types/menus";
 import type { MenuExerciseTemplate, RecordingExercise, WorkoutSetRecord } from "../../types";
 import type {
@@ -17,6 +18,7 @@ interface UseWorkoutFormProps extends HookProps {
   workoutId?: string;
   initialExercises: MenuExerciseTemplate[] | RecordingExercise[];
   lastRecords?: ExerciseLastRecord[];
+  allExercises: Exercise[];
 }
 
 export function useWorkoutForm({
@@ -24,10 +26,12 @@ export function useWorkoutForm({
   workoutId,
   initialExercises,
   lastRecords = [],
+  allExercises,
 }: UseWorkoutFormProps): UseWorkoutFormReturn {
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [intensityMode, setIntensityMode] = useState<IntensityMode>("rir");
+  const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false);
 
   const lastRecordMap = new Map(lastRecords?.map((record) => [record.exercise_id, record]) || []);
 
@@ -113,6 +117,17 @@ export function useWorkoutForm({
 
     updatedLogs[exerciseLogIndex].sets.splice(setIndex, 1);
     setExerciseLogs(updatedLogs);
+  };
+
+  // エクササイズを削除
+  const handleRemoveExercise = (exerciseLogIndex: number) => {
+    const updatedLogs = [...exerciseLogs];
+    updatedLogs.splice(exerciseLogIndex, 1);
+    setExerciseLogs(updatedLogs);
+    // エクササイズを削除したらフォームエラーをクリアする（任意）
+    if (errors.form) {
+      setErrors({});
+    }
   };
 
   // 入力値変更
@@ -216,6 +231,26 @@ export function useWorkoutForm({
     );
   };
 
+  // ★ 種目を追加する関数
+  const handleAddExercise = (exerciseId: string, exerciseName: string) => {
+    const newExerciseLog: ExerciseLog = {
+      exerciseId,
+      exerciseName,
+      // 新規追加時はデフォルト1セット
+      sets: [
+        {
+          id: crypto.randomUUID(),
+          weight: "",
+          reps: "",
+          rir: "",
+          rpe: "",
+        },
+      ],
+    };
+    setExerciseLogs((prevLogs) => [...prevLogs, newExerciseLog]);
+    setIsAddExerciseOpen(false); // Popover を閉じる
+  };
+
   return {
     exerciseLogs,
     errors,
@@ -227,5 +262,9 @@ export function useWorkoutForm({
     handleInputChange,
     handleFormSubmit,
     getPreviousSet,
+    handleRemoveExercise,
+    isAddExerciseOpen,
+    setIsAddExerciseOpen,
+    handleAddExercise,
   };
 }

@@ -1,3 +1,4 @@
+import type { Exercise } from "ts-utils/src/api/types/exercises";
 import type { ExerciseLastRecord, LastRecordData } from "ts-utils/src/api/types/menus";
 import type { MenuExerciseTemplate } from "../../types";
 
@@ -30,6 +31,7 @@ export interface UseWorkoutFormProps {
   menuId: string;
   initialExercises: MenuExerciseTemplate[];
   lastRecords?: ExerciseLastRecord[];
+  allExercises: Exercise[];
 }
 
 // useWorkoutFormの戻り値の型定義
@@ -49,4 +51,8 @@ export interface UseWorkoutFormReturn {
   ) => void;
   handleFormSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   getPreviousSet: (exerciseId: string, setIndex: number) => LastRecordData | null;
+  handleRemoveExercise: (exerciseLogIndex: number) => void;
+  isAddExerciseOpen: boolean;
+  setIsAddExerciseOpen: (isOpen: boolean) => void;
+  handleAddExercise: (exerciseId: string, exerciseName: string) => void;
 }

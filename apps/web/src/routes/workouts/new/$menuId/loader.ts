@@ -1,12 +1,22 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect } from "react-router";
+import type { Exercise } from "ts-utils/src/api/types/exercises";
 
 import type { ExerciseLastRecord, LastRecordData } from "ts-utils/src/api/types/menus";
 import { apiFetch } from "~/lib/api-client";
 
+import { getExercises, getLastRecords, getMenu } from "~/lib/api";
 import type { MenuExerciseTemplate } from "../types";
 import type { Route } from "./+types/route";
 import { type MenuApiResponse, validateMenuApiResponse } from "./schema";
+
+interface LoaderData {
+  menuId: string;
+  menuName: string;
+  exercises: MenuExerciseTemplate[];
+  lastRecords: ExerciseLastRecord[];
+  allExercises: Exercise[];
+}
 
 export async function loader(args: Route.LoaderArgs) {
   // 認証チェック
@@ -23,21 +33,10 @@ export async function loader(args: Route.LoaderArgs) {
 
   try {
     // メニュー詳細と前回の記録を並行して取得
-    const [menuResponse, lastRecords] = await Promise.all([
-      // APIからメニュー詳細を取得
-      apiFetch(args, `/menus/${menuId}`).then(async (response) => {
-        if (!response.ok) {
-          console.error(`Failed to fetch menu: ${response.status} ${response.statusText}`);
-          throw new Response("メニュー情報の取得に失敗しました", { status: response.status });
-        }
-        return response.json();
-      }),
-      // 前回のトレーニング記録を取得
-      getLastRecords(args, menuId).catch((error: unknown) => {
-        console.error(`Failed to fetch last records: ${error}`);
-        // エラー時は空配列を返す（取得できなくても処理は継続）
-        return [] as ExerciseLastRecord[];
-      }),
+    const [menuResponse, lastRecordsResponse, allExercisesResponse] = await Promise.all([
+      getMenu(args, menuId),
+      getLastRecords(args, menuId),
+      getExercises(args),
     ]);
 
     // APIレスポンスをZodスキーマでバリデーション
@@ -53,12 +52,13 @@ export async function loader(args: Route.LoaderArgs) {
         menuName: "ワークアウト",
         exercises: [],
         lastRecords: [],
+        allExercises: allExercisesResponse ?? [],
       };
     }
 
     // 前回の記録をマップ（exercise_idをキーに）
     const lastRecordsMap = new Map<string, LastRecordData | null>(
-      lastRecords.map((record: ExerciseLastRecord) => [
+      lastRecordsResponse.map((record: ExerciseLastRecord) => [
         record.exercise_id,
         record.last_records?.[0] || null,
       ])
@@ -78,13 +78,14 @@ export async function loader(args: Route.LoaderArgs) {
       };
     });
 
-    console.log("lastRecords", lastRecords);
+    console.log("lastRecords", lastRecordsResponse);
 
     return {
       menuId,
       menuName: menuData.name || "ワークアウト",
       exercises: exercisesForMenu,
-      lastRecords, // 元の形式でも返す
+      lastRecords: lastRecordsResponse,
+      allExercises: allExercisesResponse ?? [],
     };
   } catch (error) {
     console.error(`Error fetching menu ${menuId}:`, error);
@@ -94,16 +95,4 @@ export async function loader(args: Route.LoaderArgs) {
 
     throw new Response("メニュー情報の取得中にエラーが発生しました", { status: 500 });
   }
-}
-
-// APIから前回のトレーニング記録を取得する関数
-async function getLastRecords(
-  args: Route.LoaderArgs,
-  menuId: string
-): Promise<ExerciseLastRecord[]> {
-  const response = await apiFetch(args, `/menus/${menuId}/exercises/last-records`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch last records: ${response.status} ${response.statusText}`);
-  }
-  return response.json();
 }

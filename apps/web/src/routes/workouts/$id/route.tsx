@@ -2,25 +2,18 @@ import { getAuth } from "@clerk/react-router/ssr.server";
 import { redirect, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
 
+import type { Exercise } from "ts-utils/src/api/types/exercises"; // ★ 再度追加
 import { APIError, apiFetch } from "~/lib/api-client";
 import { WorkoutForm } from "../new/components/workout-form";
 import type { RecordingExercise, WorkoutSetRecord } from "../new/types";
 
 // 型定義をインポートまたは定義
-type Exercise = {
-  id: string;
-  name: string;
-  sets: number;
-  reps: number;
-  weight: number;
-};
-
-type Workout = {
-  id: string;
-  title: string;
-  date: string;
-  exercises: Exercise[];
-};
+// type Workout = {
+//   id: string;
+//   title: string;
+//   date: string;
+//   exercises: Exercise[];
+// };
 
 export function meta({ params }: { params: { id: string } }) {
   return [
@@ -62,25 +55,38 @@ export async function loader(args: { params: { id: string }; request: Request; c
   const { id } = args.params;
 
   try {
-    // APIからワークアウト詳細を取得
-    const response = await apiFetch(args, `/workouts/${id}`);
+    // ★ workout と allExercises を並行取得
+    const [workoutResponse, exercisesResponse] = await Promise.all([
+      apiFetch(args, `/workouts/${id}`),
+      apiFetch(args, "/exercises"), // ★ 再度追加 (エンドポイントは仮)
+    ]);
 
-    if (!response.ok) {
-      console.error(`Failed to fetch workout details: ${response.status} ${response.statusText}`);
+    if (!workoutResponse.ok) {
+      console.error(
+        `Failed to fetch workout details: ${workoutResponse.status} ${workoutResponse.statusText}`
+      );
       throw new APIError("ワークアウト詳細の取得に失敗しました");
     }
-
-    // APIレスポンスを取得して検証
-    const data = await response.json();
-    const workoutResult = WorkoutApiSchema.safeParse(data);
-
+    const workoutData = await workoutResponse.json();
+    const workoutResult = WorkoutApiSchema.safeParse(workoutData);
     if (!workoutResult.success) {
       console.error("API response validation failed:", workoutResult.error);
       throw new APIError("APIレスポンスの形式が正しくありません");
     }
 
-    // 検証済みのデータをそのまま返す
-    return { workout: workoutResult.data };
+    // ★ allExercises の取得とエラーハンドリング
+    let allExercises: Exercise[] = [];
+    if (!exercisesResponse.ok) {
+      console.error(
+        `Failed to fetch exercises: ${exercisesResponse.status} ${exercisesResponse.statusText}`
+      );
+      console.warn("全種目リストの取得に失敗したため、種目追加は利用できません。");
+    } else {
+      allExercises = await exercisesResponse.json(); // 必要に応じて Zod 等で検証
+    }
+
+    // ★ workout と allExercises を返す
+    return { workout: workoutResult.data, allExercises };
   } catch (error) {
     console.error("Error fetching workout details:", error);
 
@@ -93,7 +99,11 @@ export async function loader(args: { params: { id: string }; request: Request; c
 }
 
 export default function WorkoutEditRoute() {
-  const { workout } = useLoaderData() as { workout: WorkoutResponse };
+  // ★ allExercises を再度取得
+  const { workout, allExercises = [] } = useLoaderData() as {
+    workout: WorkoutResponse;
+    allExercises?: Exercise[]; // loader で取得失敗する可能性を考慮しオプショナルに
+  };
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
@@ -148,10 +158,11 @@ export default function WorkoutEditRoute() {
 
       <WorkoutForm
         menuId={workout.menu_id}
-        workoutId={workout.id} // workoutId を渡す
+        workoutId={workout.id}
         initialExercises={exercises}
-        lastRecords={[]} // 編集画面では前回記録は使用しない
+        lastRecords={[]}
         isSubmitting={isSubmitting}
+        allExercises={allExercises}
       />
     </div>
   );

@@ -1,6 +1,9 @@
+import { ChevronsUpDown, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Form } from "react-router";
+
+import type { Exercise } from "ts-utils/src/api/types/exercises";
 import type { ExerciseLastRecord } from "ts-utils/src/api/types/menus";
-import type { MenuExerciseTemplate } from "../types";
 
 import {
   Accordion,
@@ -9,9 +12,28 @@ import {
   AccordionTrigger,
 } from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import type { MenuExerciseTemplate } from "../types";
 
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import type { IntensityMode } from "../$menuId/hooks/types";
 import { useWorkoutForm } from "../$menuId/hooks/useWorkoutForm";
 
@@ -22,6 +44,7 @@ interface WorkoutFormProps {
   initialExercises: MenuExerciseTemplate[];
   lastRecords?: ExerciseLastRecord[]; // 前回のトレーニング記録（オプション）
   isSubmitting?: boolean; // Add isSubmitting prop
+  allExercises: Exercise[]; // ★ 再度追加
 }
 
 // WorkoutForm コンポーネント
@@ -31,6 +54,7 @@ export function WorkoutForm({
   initialExercises,
   lastRecords = [],
   isSubmitting, // Receive isSubmitting prop
+  allExercises, // ★ 再度追加
 }: WorkoutFormProps) {
   const {
     exerciseLogs,
@@ -43,9 +67,31 @@ export function WorkoutForm({
     handleInputChange,
     handleFormSubmit,
     getPreviousSet,
-  } = useWorkoutForm({ menuId, workoutId, initialExercises, lastRecords }); // フックに workoutId を渡す
+    handleRemoveExercise,
+    isAddExerciseOpen,
+    setIsAddExerciseOpen,
+    handleAddExercise,
+  } = useWorkoutForm({
+    menuId,
+    workoutId,
+    initialExercises,
+    lastRecords,
+    allExercises, // ★ 再度追加
+  });
 
   const isEditing = !!workoutId;
+  const [exerciseToDeleteIndex, setExerciseToDeleteIndex] = useState<number | null>(null);
+
+  const openDeleteDialog = (index: number) => {
+    setExerciseToDeleteIndex(index);
+  };
+
+  const confirmDeleteExercise = () => {
+    if (exerciseToDeleteIndex !== null) {
+      handleRemoveExercise(exerciseToDeleteIndex);
+      setExerciseToDeleteIndex(null);
+    }
+  };
 
   return (
     <Form method={isEditing ? "patch" : "post"} onSubmit={handleFormSubmit} className="space-y-6">
@@ -69,33 +115,6 @@ export function WorkoutForm({
         </div>
       )}
 
-      {/* RIR/RPE 選択UI */}
-      {/* <div className="mb-4 p-3 border rounded-md bg-gray-50">
-        <div id="intensity-mode-label" className="block text-sm font-medium text-gray-700 mb-2">
-          強度指標の入力モード:
-        </div>
-        <RadioGroup
-          defaultValue="rir"
-          value={intensityMode}
-          onValueChange={(value) => setIntensityMode(value as IntensityMode)}
-          className="flex items-center space-x-4"
-          aria-labelledby="intensity-mode-label"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="rir" id="intensity-mode-rir" />
-            <label htmlFor="intensity-mode-rir" className="text-sm text-gray-700">
-              RIR (Reps in Reserve)
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="rpe" id="intensity-mode-rpe" />
-            <label htmlFor="intensity-mode-rpe" className="text-sm text-gray-700">
-              RPE (Rating of Perceived Exertion)
-            </label>
-          </div>
-        </RadioGroup>
-      </div> */}
-
       {/* 各エクササイズのログ (アコーディオン) */}
       <Accordion type="multiple" defaultValue={[exerciseLogs[0]?.exerciseId]} className="space-y-4">
         {exerciseLogs.map((log, exerciseIndex) => (
@@ -104,8 +123,8 @@ export function WorkoutForm({
             value={log.exerciseId}
             className="border rounded-lg shadow-sm overflow-hidden"
           >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline">
-              <h3 className="text-lg font-semibold">{log.exerciseName}</h3>
+            <AccordionTrigger className="px-4 py-3 hover:no-underline flex justify-between items-center">
+              <h3 className="text-lg font-semibold flex-1 mr-2">{log.exerciseName}</h3>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <div className="space-y-4">
@@ -239,21 +258,101 @@ export function WorkoutForm({
                     })()}
                   </div>
                 ))}
-                {/* セット追加ボタン */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleAddSet(exerciseIndex)}
-                  className="mt-2"
-                >
-                  セット追加
-                </Button>
+                {/* セット追加ボタンとエクササイズ削除ボタン */}
+                <div className="mt-4 flex justify-between items-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddSet(exerciseIndex)}
+                  >
+                    セット追加
+                  </Button>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          openDeleteDialog(exerciseIndex);
+                        }}
+                        className="text-destructive hover:text-destructive/80 p-1 h-auto"
+                        aria-label={`${log.exerciseName} を削除`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    {exerciseToDeleteIndex === exerciseIndex && (
+                      <DialogContent
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                        onPointerDownOutside={(e) => e.preventDefault()}
+                      >
+                        <DialogHeader>
+                          <DialogTitle>エクササイズの削除</DialogTitle>
+                          <DialogDescription>
+                            「{log.exerciseName}
+                            」と記録中のすべてのセットを削除しますか？この操作は元に戻せません。
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button variant="outline">キャンセル</Button>
+                          </DialogClose>
+                          <Button
+                            variant="destructive"
+                            onClick={() => {
+                              confirmDeleteExercise();
+                            }}
+                          >
+                            削除
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    )}
+                  </Dialog>
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
+
+      {/* ★ 種目追加ボタンと Popover/Combobox */}
+      <div className="mt-6 text-center">
+        <Popover open={isAddExerciseOpen} onOpenChange={setIsAddExerciseOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="secondary">
+              種目を追加
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+            <Command>
+              <CommandInput placeholder="Search exercise..." />
+              <CommandList>
+                <CommandEmpty>No exercise found.</CommandEmpty>
+                <CommandGroup>
+                  {allExercises?.map((exercise) => (
+                    <CommandItem
+                      key={exercise.id}
+                      value={exercise.id}
+                      onSelect={(currentValue) => {
+                        const selectedExercise = allExercises.find((ex) => ex.id === currentValue);
+                        if (selectedExercise) {
+                          handleAddExercise(selectedExercise.id, selectedExercise.name);
+                        }
+                      }}
+                    >
+                      {exercise.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
 
       {/* 送信ボタン */}
       <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting}>
