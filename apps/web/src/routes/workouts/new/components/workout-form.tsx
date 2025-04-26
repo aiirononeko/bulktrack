@@ -2,23 +2,34 @@ import { Form } from "react-router";
 import type { ExerciseLastRecord } from "ts-utils/src/api/types/menus";
 import type { MenuExerciseTemplate } from "../types";
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
-import { useWorkoutForm } from "../$menuId/hooks/useWorkoutForm";
 import type { IntensityMode } from "../$menuId/hooks/types";
+import { useWorkoutForm } from "../$menuId/hooks/useWorkoutForm";
 
 // WorkoutFormのpropsの型を定義
 interface WorkoutFormProps {
   menuId: string;
+  workoutId?: string; // 編集用に workoutId を追加 (オプショナル)
   initialExercises: MenuExerciseTemplate[];
   lastRecords?: ExerciseLastRecord[]; // 前回のトレーニング記録（オプション）
 }
 
 // WorkoutForm コンポーネント
-export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: WorkoutFormProps) {
+export function WorkoutForm({
+  menuId,
+  workoutId, // workoutId を受け取る
+  initialExercises,
+  lastRecords = [],
+}: WorkoutFormProps) {
   const {
     exerciseLogs,
     errors,
@@ -30,10 +41,12 @@ export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: Work
     handleInputChange,
     handleFormSubmit,
     getPreviousSet,
-  } = useWorkoutForm({ menuId, initialExercises, lastRecords });
+  } = useWorkoutForm({ menuId, workoutId, initialExercises, lastRecords }); // フックに workoutId を渡す
+
+  const isEditing = !!workoutId;
 
   return (
-    <Form method="post" onSubmit={handleFormSubmit} className="space-y-6">
+    <Form method={isEditing ? "patch" : "post"} onSubmit={handleFormSubmit} className="space-y-6">
       {/* エラー表示 */}
       {actionData?.error && (
         <div
@@ -101,7 +114,7 @@ export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: Work
                         htmlFor={`weight-${exerciseIndex}-${setIndex}`}
                         className="w-10 text-right shrink-0 pr-2"
                       >{`Set ${setIndex + 1}`}</label>
-                      
+
                       {/* Weight Field */}
                       <div className="flex-1">
                         <Input
@@ -116,7 +129,7 @@ export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: Work
                           className="w-full"
                         />
                       </div>
-                      
+
                       {/* Reps Field */}
                       <div className="flex-1">
                         <Input
@@ -195,7 +208,10 @@ export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: Work
                           {intensityMode === "rir" ? (
                             <>
                               {typeof correspondingPrevSet.rir === "number" && (
-                                <span className="font-medium"> (RIR {correspondingPrevSet.rir})</span>
+                                <span className="font-medium">
+                                  {" "}
+                                  (RIR {correspondingPrevSet.rir})
+                                </span>
                               )}
                               {typeof correspondingPrevSet.rir !== "number" &&
                                 typeof correspondingPrevSet.rpe === "number" && (
@@ -205,7 +221,10 @@ export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: Work
                           ) : (
                             <>
                               {typeof correspondingPrevSet.rpe === "number" && (
-                                <span className="font-medium"> (RPE {correspondingPrevSet.rpe})</span>
+                                <span className="font-medium">
+                                  {" "}
+                                  (RPE {correspondingPrevSet.rpe})
+                                </span>
                               )}
                               {typeof correspondingPrevSet.rpe !== "number" &&
                                 typeof correspondingPrevSet.rir === "number" && (
@@ -235,11 +254,8 @@ export function WorkoutForm({ menuId, initialExercises, lastRecords = [] }: Work
       </Accordion>
 
       {/* 送信ボタン */}
-      <Button
-        type="submit"
-        className="w-full"
-      >
-        ワークアウトを記録
+      <Button type="submit" className="w-full">
+        {isEditing ? "ワークアウトを更新" : "ワークアウトを記録"}
       </Button>
     </Form>
   );

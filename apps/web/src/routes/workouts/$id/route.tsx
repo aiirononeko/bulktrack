@@ -1,9 +1,10 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
-import { useLoaderData, useParams } from "react-router";
-import { redirect } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import { z } from "zod";
+
 import { APIError, apiFetch } from "~/lib/api-client";
-import { WorkoutDetail } from "./components/workout-detail";
+import { WorkoutForm } from "../new/components/workout-form";
+import type { RecordingExercise, WorkoutSetRecord } from "../new/types";
 
 // 型定義をインポートまたは定義
 type Exercise = {
@@ -35,8 +36,8 @@ const SetSchema = z.object({
   set_order: z.number(),
   weight_kg: z.number(),
   reps: z.number(),
-  rir: z.number().nullable(),
-  rpe: z.number().nullable(),
+  rir: z.number(),
+  rpe: z.number(),
 });
 
 const WorkoutApiSchema = z.object({
@@ -47,6 +48,8 @@ const WorkoutApiSchema = z.object({
   note: z.string().optional(),
   sets: z.array(SetSchema),
 });
+
+export type WorkoutResponse = z.infer<typeof WorkoutApiSchema>;
 
 // データローダー
 export async function loader(args: { params: { id: string }; request: Request; context: any }) {
@@ -76,42 +79,8 @@ export async function loader(args: { params: { id: string }; request: Request; c
       throw new APIError("APIレスポンスの形式が正しくありません");
     }
 
-    const apiWorkout = workoutResult.data;
-
-    // バックエンドからのデータをフロントエンドの期待する形式に変換
-    // sets配列からexercisesを作成（種目ごとにグループ化）
-    const exerciseMap = new Map<string, Exercise>();
-
-    for (const set of apiWorkout.sets) {
-      const exerciseName = set.exercise_name;
-
-      if (!exerciseMap.has(exerciseName)) {
-        exerciseMap.set(exerciseName, {
-          id: set.id, // 最初のセットのIDを種目IDとして使用
-          name: exerciseName,
-          sets: 0,
-          reps: 0,
-          weight: 0,
-        });
-      }
-
-      const exercise = exerciseMap.get(exerciseName)!;
-      exercise.sets += 1;
-      exercise.reps = set.reps; // 最後のセットのレップ数を使用
-      exercise.weight = set.weight_kg; // 最後のセットの重量を使用
-    }
-
-    // Map から配列に変換
-    const exercises = Array.from(exerciseMap.values());
-
-    return {
-      workout: {
-        id: apiWorkout.id,
-        title: apiWorkout.menu_name,
-        date: new Date(apiWorkout.started_at).toLocaleDateString(),
-        exercises: exercises,
-      } as Workout,
-    };
+    // 検証済みのデータをそのまま返す
+    return { workout: workoutResult.data };
   } catch (error) {
     console.error("Error fetching workout details:", error);
 
@@ -123,12 +92,66 @@ export async function loader(args: { params: { id: string }; request: Request; c
   }
 }
 
-export default function Component() {
-  const { workout } = useLoaderData() as { workout: Workout };
+export default function WorkoutEditRoute() {
+  const { workout } = useLoaderData() as { workout: WorkoutResponse };
+
+  // APIレスポンスの Sets (SetView[]) を WorkoutForm が期待する RecordingExercise[] に変換
+  const exercises: RecordingExercise[] = [];
+  const exerciseMap = new Map<string, RecordingExercise>();
+
+  for (const set of workout.sets) {
+    const exerciseName = set.exercise_name;
+    if (!exerciseMap.has(exerciseName)) {
+      // RecordingExercise に必要なプロパティをセット
+      exerciseMap.set(exerciseName, {
+        // id: set.id, // RecordingExercise には exercise_id は不要 (id はメニュー項目ID)
+        id: exerciseName, // 仮: 種目名を ID として使用 (本来は Exercise Master ID などが必要)
+        name: exerciseName,
+        targetSets: 0, // DB から取得したセット数で後で上書き、または初期値
+        targetReps: "", // 必要であれば設定
+        sets: [],
+      });
+    }
+    const exercise = exerciseMap.get(exerciseName)!;
+    exercise.sets.push({
+      id: set.id, // セットの UUID をセットのIDとして使う
+      setNumber: set.set_order,
+      weight: set.weight_kg,
+      reps: set.reps,
+      rir: set.rir,
+      // rpe: set.rpe, // WorkoutSetRecord には RPE はない
+      isCompleted: true, // 既存のセットは完了済みとする
+    });
+    // targetSets を更新 (最大セット数)
+    exercise.targetSets = Math.max(exercise.targetSets, set.set_order);
+  }
+
+  // Mapから配列に変換し、セットをset_orderでソート
+  for (const exercise of exerciseMap.values()) {
+    // forEach を for...of に変更
+    exercise.sets.sort((a: WorkoutSetRecord, b: WorkoutSetRecord) => a.setNumber - b.setNumber); // 型を追加
+    exercises.push(exercise);
+  }
+  // 種目を元のセット順（最初のセットの set_order）でソート
+  exercises.sort((a: RecordingExercise, b: RecordingExercise) => {
+    // 型を追加
+    const firstSetOrderA = a.sets.length > 0 ? a.sets[0].setNumber : Number.POSITIVE_INFINITY; // Infinity -> Number.POSITIVE_INFINITY
+    const firstSetOrderB = b.sets.length > 0 ? b.sets[0].setNumber : Number.POSITIVE_INFINITY; // Infinity -> Number.POSITIVE_INFINITY
+    return firstSetOrderA - firstSetOrderB;
+  });
 
   return (
-    <div>
-      <WorkoutDetail workout={workout} />
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">{workout.menu_name} 編集</h1>
+
+      <WorkoutForm
+        menuId={workout.menu_id}
+        workoutId={workout.id} // workoutId を渡す
+        initialExercises={exercises}
+        lastRecords={[]} // 編集画面では前回記録は使用しない
+      />
     </div>
   );
 }
+
+export { action } from "./action";

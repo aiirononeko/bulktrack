@@ -295,34 +295,26 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 					return nil, fmt.Errorf("failed to create set [%d-%d]: %w", exerciseIndex, setIndex, err)
 				}
 
-				// Increment global set order counter
-				globalSetOrder++
-
-				// デバッグログ: セット作成成功
-				s.logger.InfoContext(ctx, "Set created in DB",
-					slog.String("set_id", createdSet.ID.String()),
-					slog.Int("exercise_index", exerciseIndex),
-					slog.Int("set_index", setIndex),
-					slog.String("workout_id", workout.ID.String()))
-
-				// DTOに変換
-				setView := dto.SetView{
+				// セット情報をDTOに変換
+				setDto := dto.SetView{
 					ID:       createdSet.ID,
 					Exercise: exerciseName,
-					SetOrder: createdSet.SetOrder, // Use the order from the created set
-					WeightKg: set.WeightKg,
-					Reps:     set.Reps,
+					SetOrder: globalSetOrder,
+					WeightKg: set.WeightKg, // 直接代入
+					Reps:     set.Reps,     // 直接代入
+					RIR:      0.0,          // 初期化
+					RPE:      0.0,          // 初期化
 				}
-
-				// RIR/RPEの設定
+				// RIR が nil でなければ値を代入
 				if set.RIR != nil {
-					setView.RIR = set.RIR
+					setDto.RIR = *set.RIR // デリファレンスして代入
 				}
+				// RPE が nil でなければ値を代入
 				if set.RPE != nil {
-					setView.RPE = set.RPE
+					setDto.RPE = *set.RPE // デリファレンスして代入
 				}
-
-				sets = append(sets, setView)
+				sets = append(sets, setDto)
+				globalSetOrder++ // Increment global set order
 			}
 		}
 	} else {
@@ -378,22 +370,22 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 				SetOrder: set.SetOrder,
 				WeightKg: 0,
 				Reps:     set.Reps,
-				RIR:      nil,
-				RPE:      nil,
+				RIR:      0.0, // nil の代わりに 0.0 を代入
+				RPE:      0.0, // nil の代わりに 0.0 を代入
 			})
 		}
 	}
 
 	// トランザクションコミット
 	if err = tx.Commit(ctx); err != nil {
-		s.logger.ErrorContext(ctx, "Failed to commit transaction for StartWorkout", slog.Any("error", err), slog.String("user_id", userID), slog.String("workout_id", workout.ID.String()))
+		s.logger.ErrorContext(ctx, "Failed to commit transaction for StartWorkout", slog.Any("error", err), slog.String("user_id", userID))
 		return nil, err
 	}
 
-	// デバッグログ: トランザクション完了
-	s.logger.InfoContext(ctx, "Transaction committed successfully",
-		slog.String("workout_id", workout.ID.String()),
-		slog.Int("sets_count", len(sets)))
+	// デバッグログ: トランザクションコミット成功
+	s.logger.InfoContext(ctx, "Transaction committed successfully for StartWorkout",
+		slog.String("user_id", userID),
+		slog.String("workout_id", workout.ID.String()))
 
 	// ノートの変換
 	var noteStr string
@@ -402,23 +394,28 @@ func (s *WorkoutService) StartWorkout(ctx context.Context, req dto.CreateWorkout
 	}
 
 	// レスポンス作成
-	response := &dto.WorkoutResponse{
+	resp = &dto.WorkoutResponse{
 		ID:        workout.ID,
-		MenuID:    req.MenuID,
+		MenuID:    workout.MenuID.Bytes,
 		MenuName:  menu.Name,
 		StartedAt: workout.StartedAt.Time.Format(time.RFC3339),
 		Note:      noteStr,
 		Sets:      sets,
 	}
 
-	// デバッグログ: 最終レスポンス
+	// デバッグログ: StartWorkout レスポンス
+	var setsInResponse int
+	if resp != nil && resp.Sets != nil {
+		setsInResponse = len(resp.Sets)
+	}
+
 	s.logger.InfoContext(ctx, "StartWorkout response prepared",
 		slog.String("workout_id", workout.ID.String()),
 		slog.String("menu_id", req.MenuID.String()),
 		slog.String("menu_name", menu.Name),
-		slog.Int("sets_count", len(sets)))
+		slog.Int("sets_count", setsInResponse))
 
-	return response, nil
+	return resp, nil
 }
 
 // UpdateSet はセットを更新する
@@ -495,37 +492,40 @@ func (s *WorkoutService) UpdateSet(ctx context.Context, setID uuid.UUID, req dto
 	// DTOに変換
 	result := dto.SetView{
 		ID:       updatedSet.ID,
-		Exercise: exerciseName, // 取得した名前を使用
+		Exercise: exerciseName,
 		SetOrder: updatedSet.SetOrder,
 		WeightKg: 0, // 初期化
 		Reps:     updatedSet.Reps,
-		// RIR, RPE は pgtype.Numeric から *float64 に変換
+		RIR:      0.0, // 0.0 で初期化
+		RPE:      0.0, // 0.0 で初期化
 	}
 	// WeightKg の変換
 	if updatedSet.WeightKg.Valid {
-		wVal, err := updatedSet.WeightKg.Float64Value() // Float64Value を使用
+		wVal, err := updatedSet.WeightKg.Float64Value()
 		if err != nil {
 			s.logger.WarnContext(ctx, "Failed to get Float64Value for WeightKg from DB for SetView", slog.Any("error", err), slog.String("set_id", updatedSet.ID.String()))
-		} else if wVal.Valid { // pgtype.Float8Val の Valid をチェック
-			result.WeightKg = wVal.Float64 // Float64 フィールドを使用
+		} else if wVal.Valid {
+			result.WeightKg = wVal.Float64
 		}
 	}
-	// RIR の変換
+	// RIR の変換 (NULL の場合は 0.0)
 	if updatedSet.Rir.Valid {
-		rirVal, err := updatedSet.Rir.Float64Value() // Float64Value を使用
+		rirVal, err := updatedSet.Rir.Float64Value()
 		if err != nil {
 			s.logger.WarnContext(ctx, "Failed to get Float64Value for Rir from DB for SetView", slog.Any("error", err), slog.String("set_id", updatedSet.ID.String()))
-		} else if rirVal.Valid { // pgtype.Float8Val の Valid をチェック
-			result.RIR = &rirVal.Float64 // ポインタにして Float64 フィールドを使用
+		} else if rirVal.Valid {
+			// result.RIR = &rirVal.Float64 // ポインタではなく値を代入
+			result.RIR = rirVal.Float64
 		}
 	}
-	// RPE の変換
+	// RPE の変換 (NULL の場合は 0.0)
 	if updatedSet.Rpe.Valid {
-		rpeVal, err := updatedSet.Rpe.Float64Value() // Float64Value を使用
+		rpeVal, err := updatedSet.Rpe.Float64Value()
 		if err != nil {
 			s.logger.WarnContext(ctx, "Failed to get Float64Value for Rpe from DB for SetView", slog.Any("error", err), slog.String("set_id", updatedSet.ID.String()))
-		} else if rpeVal.Valid { // pgtype.Float8Val の Valid をチェック
-			result.RPE = &rpeVal.Float64 // ポインタにして Float64 フィールドを使用
+		} else if rpeVal.Valid {
+			// result.RPE = &rpeVal.Float64 // ポインタではなく値を代入
+			result.RPE = rpeVal.Float64
 		}
 	}
 
@@ -544,21 +544,20 @@ func (s *WorkoutService) GetWorkoutWithSets(ctx context.Context, workoutID uuid.
 	// メニュー情報の取得
 	menu, err := s.queries.GetMenu(ctx, workout.MenuID.Bytes)
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute GetMenu query for workout", slog.Any("error", err), slog.String("menu_id", uuid.UUID(workout.MenuID.Bytes).String()), slog.String("workout_id", workoutID.String())) // 修正: uuid.UUID(...) で囲む
+		s.logger.ErrorContext(ctx, "Failed to execute GetMenu query for workout", slog.Any("error", err), slog.String("menu_id", uuid.UUID(workout.MenuID.Bytes).String()), slog.String("workout_id", workoutID.String()))
 		return nil, err
 	}
 
-	// セット一覧の取得 (ListSetViewsByWorkout の代わりに ListSetsByWorkout を使用)
-	// setsView, err := s.queries.ListSetViewsByWorkout(ctx, pgtype.UUID{Bytes: workoutID, Valid: true}) // コメントアウト
-	setsRow, err := s.queries.ListSetsByWorkout(ctx, pgtype.UUID{Bytes: workoutID, Valid: true}) // ListSetsByWorkout を使用 (ExerciseName を含まない)
+	// セット一覧の取得
+	setsRow, err := s.queries.ListSetsByWorkout(ctx, pgtype.UUID{Bytes: workoutID, Valid: true})
 	if err != nil {
-		s.logger.ErrorContext(ctx, "Failed to execute ListSetsByWorkout query", slog.Any("error", err), slog.String("workout_id", workoutID.String())) // ListSetsByWorkout に変更
+		s.logger.ErrorContext(ctx, "Failed to execute ListSetsByWorkout query", slog.Any("error", err), slog.String("workout_id", workoutID.String()))
 		return nil, err
 	}
 
-	// DTOに変換 (ループ内で ExerciseName を取得)
+	// DTOに変換
 	sets := make([]dto.SetView, 0, len(setsRow))
-	for _, setRow := range setsRow { // 変数名変更
+	for _, setRow := range setsRow {
 		// Exercise Name を取得
 		exerciseName := "不明な種目"
 		if setRow.ExerciseID.Valid {
@@ -571,37 +570,41 @@ func (s *WorkoutService) GetWorkoutWithSets(ctx context.Context, workoutID uuid.
 		}
 
 		setDTO := dto.SetView{
-			ID:       setRow.ID,       // setRow を使用
-			Exercise: exerciseName,    // 取得した名前を使用
-			SetOrder: setRow.SetOrder, // setRow を使用
-			WeightKg: 0,               // 初期化
-			Reps:     setRow.Reps,     // setRow を使用
+			ID:       setRow.ID,
+			Exercise: exerciseName,
+			SetOrder: setRow.SetOrder,
+			WeightKg: 0, // 初期化
+			Reps:     setRow.Reps,
+			RIR:      0.0, // 初期化
+			RPE:      0.0, // 初期化
 		}
 		// WeightKg の変換
-		if setRow.WeightKg.Valid { // setRow を使用
-			wVal, errConv := setRow.WeightKg.Float64Value() // Float64Value を使用
+		if setRow.WeightKg.Valid {
+			wVal, errConv := setRow.WeightKg.Float64Value()
 			if errConv != nil {
 				s.logger.WarnContext(ctx, "Failed to get Float64Value for WeightKg from DB for ListSetsByWorkout", slog.Any("error", errConv), slog.String("set_id", setRow.ID.String()))
-			} else if wVal.Valid { // pgtype.Float8Val の Valid をチェック
-				setDTO.WeightKg = wVal.Float64 // Float64 フィールドを使用
+			} else if wVal.Valid {
+				setDTO.WeightKg = wVal.Float64
 			}
 		}
-		// RIR の変換
-		if setRow.Rir.Valid { // setRow を使用
-			rirVal, errConv := setRow.Rir.Float64Value() // Float64Value を使用
+		// RIR の変換 (NULL の場合は 0.0)
+		if setRow.Rir.Valid {
+			rirVal, errConv := setRow.Rir.Float64Value()
 			if errConv != nil {
 				s.logger.WarnContext(ctx, "Failed to get Float64Value for Rir from DB for ListSetsByWorkout", slog.Any("error", errConv), slog.String("set_id", setRow.ID.String()))
-			} else if rirVal.Valid { // pgtype.Float8Val の Valid をチェック
-				setDTO.RIR = &rirVal.Float64 // ポインタにして Float64 フィールドを使用
+			} else if rirVal.Valid {
+				// setDTO.RIR = &rirVal.Float64 // ポインタではなく値を代入
+				setDTO.RIR = rirVal.Float64
 			}
 		}
-		// RPE の変換
-		if setRow.Rpe.Valid { // setRow を使用
-			rpeVal, errConv := setRow.Rpe.Float64Value() // Float64Value を使用
+		// RPE の変換 (NULL の場合は 0.0)
+		if setRow.Rpe.Valid {
+			rpeVal, errConv := setRow.Rpe.Float64Value()
 			if errConv != nil {
 				s.logger.WarnContext(ctx, "Failed to get Float64Value for Rpe from DB for ListSetsByWorkout", slog.Any("error", errConv), slog.String("set_id", setRow.ID.String()))
-			} else if rpeVal.Valid { // pgtype.Float8Val の Valid をチェック
-				setDTO.RPE = &rpeVal.Float64 // ポインタにして Float64 フィールドを使用
+			} else if rpeVal.Valid {
+				// setDTO.RPE = &rpeVal.Float64 // ポインタではなく値を代入
+				setDTO.RPE = rpeVal.Float64
 			}
 		}
 		sets = append(sets, setDTO)

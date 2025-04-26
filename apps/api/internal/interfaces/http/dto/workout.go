@@ -49,6 +49,6 @@ type SetView struct {
 	SetOrder int32     `json:"set_order"`
 	WeightKg float64   `json:"weight_kg"`
 	Reps     int32     `json:"reps"`
-	RIR      *float64  `json:"rir,omitempty"`
-	RPE      *float64  `json:"rpe,omitempty"`
+	RIR      float64   `json:"rir"`
+	RPE      float64   `json:"rpe"`
 }
