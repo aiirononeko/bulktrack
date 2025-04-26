@@ -21,6 +21,7 @@ interface WorkoutFormProps {
   workoutId?: string; // 編集用に workoutId を追加 (オプショナル)
   initialExercises: MenuExerciseTemplate[];
   lastRecords?: ExerciseLastRecord[]; // 前回のトレーニング記録（オプション）
+  isSubmitting?: boolean; // Add isSubmitting prop
 }
 
 // WorkoutForm コンポーネント
@@ -29,6 +30,7 @@ export function WorkoutForm({
   workoutId, // workoutId を受け取る
   initialExercises,
   lastRecords = [],
+  isSubmitting, // Receive isSubmitting prop
 }: WorkoutFormProps) {
   const {
     exerciseLogs,
@@ -68,7 +70,7 @@ export function WorkoutForm({
       )}
 
       {/* RIR/RPE 選択UI */}
-      <div className="mb-4 p-3 border rounded-md bg-gray-50">
+      {/* <div className="mb-4 p-3 border rounded-md bg-gray-50">
         <div id="intensity-mode-label" className="block text-sm font-medium text-gray-700 mb-2">
           強度指標の入力モード:
         </div>
@@ -92,7 +94,7 @@ export function WorkoutForm({
             </label>
           </div>
         </RadioGroup>
-      </div>
+      </div> */}
 
       {/* 各エクササイズのログ (アコーディオン) */}
       <Accordion type="multiple" defaultValue={[exerciseLogs[0]?.exerciseId]} className="space-y-4">
@@ -254,7 +256,7 @@ export function WorkoutForm({
       </Accordion>
 
       {/* 送信ボタン */}
-      <Button type="submit" className="w-full">
+      <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting}>
         {isEditing ? "ワークアウトを更新" : "ワークアウトを記録"}
       </Button>
     </Form>

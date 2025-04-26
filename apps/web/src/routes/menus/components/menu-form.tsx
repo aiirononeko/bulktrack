@@ -322,7 +322,8 @@ export function MenuForm({ initialData, isSubmitting, exercises }: MenuFormProps
           )}
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
+        {/* 送信ボタン */}
+        <Button type="submit" loading={isSubmitting} disabled={isSubmitting}>
           {initialData ? "メニューを更新" : "メニューを作成"}
         </Button>
       </form>

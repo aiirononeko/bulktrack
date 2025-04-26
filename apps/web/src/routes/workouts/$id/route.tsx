@@ -1,5 +1,5 @@
 import { getAuth } from "@clerk/react-router/ssr.server";
-import { redirect, useLoaderData } from "react-router";
+import { redirect, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
 
 import { APIError, apiFetch } from "~/lib/api-client";
@@ -94,6 +94,8 @@ export async function loader(args: { params: { id: string }; request: Request; c
 
 export default function WorkoutEditRoute() {
   const { workout } = useLoaderData() as { workout: WorkoutResponse };
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
 
   // APIレスポンスの Sets (SetView[]) を WorkoutForm が期待する RecordingExercise[] に変換
   const exercises: RecordingExercise[] = [];
@@ -149,6 +151,7 @@ export default function WorkoutEditRoute() {
         workoutId={workout.id} // workoutId を渡す
         initialExercises={exercises}
         lastRecords={[]} // 編集画面では前回記録は使用しない
+        isSubmitting={isSubmitting}
       />
     </div>
   );

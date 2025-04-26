@@ -10,12 +10,14 @@ import {
   ScrollRestoration,
   isRouteErrorResponse,
   useLocation,
+  useNavigation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 import { Plus } from "lucide-react";
 import { Button } from "./components/ui/button";
+import { Spinner } from "./components/ui/spinner";
 import Header from "./routes/components/header";
 
 export async function loader(args: Route.LoaderArgs) {
@@ -55,6 +57,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App({ loaderData }: Route.ComponentProps) {
   const location = useLocation();
+  const navigation = useNavigation();
+  const isLoading = navigation.state === "loading";
   const shouldShowFab = !location.pathname.startsWith("/workouts/new");
 
   return (
@@ -64,6 +68,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
       signInFallbackRedirectUrl="/"
     >
       <Header />
+      {isLoading && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[100]">
+          <Spinner className="size-8 text-primary" />
+        </div>
+      )}
       <main className="pt-4 pb-24 px-4">
         <Outlet />
       </main>
