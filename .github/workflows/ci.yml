@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/web/**'
+      - 'apps/api/**'
+      - 'apps/watchos/**'
+      - 'packages/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'apps/web/**'
+      - 'apps/api/**'
+      - 'apps/watchos/**'
+      - 'packages/**'
+
+jobs:
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.pull_request.files.*.path, 'apps/web/') ||
+      contains(github.event.push.paths, 'apps/web/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm --filter web lint
+
+      - name: Type check
+        run: pnpm --filter web typecheck
+
+      - name: Test
+        run: pnpm --filter web test
+
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.pull_request.files.*.path, 'apps/api/') ||
+      contains(github.event.push.paths, 'apps/api/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+
+      - name: Go vet
+        working-directory: ./apps/api
+        run: go vet ./...
+
+      - name: Static check
+        working-directory: ./apps/api
+        run: golangci-lint run --disable-all -E staticcheck
+
+      - name: Test
+        working-directory: ./apps/api
+        run: go test -v ./...
+
+  watchos:
+    name: watchOS CI
+    runs-on: macos-latest
+    if: |
+      contains(github.event.pull_request.files.*.path, 'apps/watchos/') ||
+      contains(github.event.push.paths, 'apps/watchos/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build watchOS app
+        run: |
+          cd apps/watchos
+          xcodebuild clean build -project BulkTrackWatch.xcodeproj -scheme BulkTrackWatch -destination "platform=watchOS Simulator,name=Apple Watch Series 9 (45mm)" CODE_SIGNING_ALLOWED=NO

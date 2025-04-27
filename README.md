@@ -92,11 +92,14 @@ BulkTrack は 「筋肥大 × データ × Apple Watch 体験」 を再発明し
 │   │   ├─ src/
 │   │   ├─ public/
 │   │   └─ wrangler.toml
-│   └─ api/                  # Go + Fly.io
-│       ├─ cmd/server/       # main.go (エントリポイント)
-│       ├─ internal/         # ドメイン層・DB 層
-│       ├─ go.mod
-│       └─ Dockerfile
+│   ├─ api/                  # Go + Fly.io
+│   │   ├─ cmd/server/       # main.go (エントリポイント)
+│   │   ├─ internal/         # ドメイン層・DB 層
+│   │   ├─ go.mod
+│   │   └─ Dockerfile
+│   └─ watchos/              # watchOS アプリ
+│       ├─ BulkTrackWatch/   # Swift ソースコード
+│       └─ BulkTrackWatch.xcodeproj/
 ├─ packages/                 # 共有ライブラリ
 │   ├─ ts-utils/             # TypeScript ヘルパー / API クライアント
 │   └─ go-shared/            # Go ドメインモデル / DTO
@@ -312,6 +315,31 @@ source .env && psql "$DATABASE_URL" -f internal/infrastructure/db/schema.sql
 | ルート雛形生成  | `"/posts/:slug" 用の React Router v7 ルート (TypeScript) を生成し、型は "+types/posts.$slug" を import してください。` | `import type` を明示すると誤 import を防げる |
 | Worker ハンドラ | `Cloudflare Workers の fetch ハンドラを createCloudflareHandler で実装し、streaming HTML を返すコードを出力して`       | Node API 誤用を回避                          |
 | tsconfig 修正   | `Cannot find module './+types/...' を解消する tsconfig 設定は?`                                                        | エラーメッセージ全文を貼る                   |
+
+## 11. watchOS アプリケーション
+
+BulkTrack の watchOS アプリケーションは、Apple Watch 上でトレーニングの記録と管理を行うためのネイティブアプリケーションです。
+
+### 11.1 概要
+
+- **Swift / SwiftUI**: 最新の Swift と SwiftUI フレームワークを使用して開発
+- **スタンドアロン**: Apple Watch 単体で完結する操作性を重視
+- **デジタルクラウン操作**: 重量・レップ数の素早い入力をデジタルクラウンで実現
+- **ハプティックフィードバック**: 触覚通知による直感的な操作感
+
+### 11.2 主要機能
+
+- **トレーニング記録**: 3タップ以内でセット記録を完了
+- **リアルタイム集計**: 部位別・種目別の週間トレーニングボリューム可視化
+- **Volume Guard™**: 過剰トレーニングの警告通知
+- **iCloud同期**: iPhone/Webアプリとのシームレスな連携
+
+### 11.3 開発環境
+
+- **Xcode 15+**: 最新の watchOS SDK を使用
+- **SwiftUI**: 宣言的UIフレームワーク
+- **WidgetKit**: コンプリケーション対応
+- **HealthKit**: Apple Health との連携
 
 ## 認証・認可 (Authentication & Authorization)
 
