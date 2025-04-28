@@ -1,0 +1,950 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4F5E38F32DBFF3D900E46A2E /* BulkTrack Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4F5E38F22DBFF3D900E46A2E /* BulkTrack Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4F5E38DD2DBFF3D900E46A2E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F5E38C72DBFF3D700E46A2E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F5E38CE2DBFF3D700E46A2E;
+			remoteInfo = BulkTrack;
+		};
+		4F5E38E72DBFF3D900E46A2E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F5E38C72DBFF3D700E46A2E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F5E38CE2DBFF3D700E46A2E;
+			remoteInfo = BulkTrack;
+		};
+		4F5E38F42DBFF3D900E46A2E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F5E38C72DBFF3D700E46A2E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F5E38F12DBFF3D900E46A2E;
+			remoteInfo = "BulkTrack Watch App";
+		};
+		4F5E39022DBFF3DA00E46A2E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F5E38C72DBFF3D700E46A2E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F5E38F12DBFF3D900E46A2E;
+			remoteInfo = "BulkTrack Watch App";
+		};
+		4F5E390C2DBFF3DA00E46A2E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F5E38C72DBFF3D700E46A2E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F5E38F12DBFF3D900E46A2E;
+			remoteInfo = "BulkTrack Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4F5E39182DBFF3DA00E46A2E /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				4F5E38F32DBFF3D900E46A2E /* BulkTrack Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		4F5E38CF2DBFF3D700E46A2E /* BulkTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BulkTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F5E38DC2DBFF3D900E46A2E /* BulkTrackTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BulkTrackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F5E38E62DBFF3D900E46A2E /* BulkTrackUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BulkTrackUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F5E38F22DBFF3D900E46A2E /* BulkTrack Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BulkTrack Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F5E39012DBFF3DA00E46A2E /* BulkTrack Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "BulkTrack Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F5E390B2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "BulkTrack Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		4F5E38D12DBFF3D700E46A2E /* BulkTrack */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BulkTrack;
+			sourceTree = "<group>";
+		};
+		4F5E38DF2DBFF3D900E46A2E /* BulkTrackTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BulkTrackTests;
+			sourceTree = "<group>";
+		};
+		4F5E38E92DBFF3D900E46A2E /* BulkTrackUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BulkTrackUITests;
+			sourceTree = "<group>";
+		};
+		4F5E38F62DBFF3D900E46A2E /* BulkTrack Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "BulkTrack Watch App";
+			sourceTree = "<group>";
+		};
+		4F5E39042DBFF3DA00E46A2E /* BulkTrack Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "BulkTrack Watch AppTests";
+			sourceTree = "<group>";
+		};
+		4F5E390E2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "BulkTrack Watch AppUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4F5E38CC2DBFF3D700E46A2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38D92DBFF3D900E46A2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38E32DBFF3D900E46A2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38EF2DBFF3D900E46A2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38FE2DBFF3DA00E46A2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E39082DBFF3DA00E46A2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4F5E38C62DBFF3D700E46A2E = {
+			isa = PBXGroup;
+			children = (
+				4F5E38D12DBFF3D700E46A2E /* BulkTrack */,
+				4F5E38DF2DBFF3D900E46A2E /* BulkTrackTests */,
+				4F5E38E92DBFF3D900E46A2E /* BulkTrackUITests */,
+				4F5E38F62DBFF3D900E46A2E /* BulkTrack Watch App */,
+				4F5E39042DBFF3DA00E46A2E /* BulkTrack Watch AppTests */,
+				4F5E390E2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests */,
+				4F5E38D02DBFF3D700E46A2E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4F5E38D02DBFF3D700E46A2E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4F5E38CF2DBFF3D700E46A2E /* BulkTrack.app */,
+				4F5E38DC2DBFF3D900E46A2E /* BulkTrackTests.xctest */,
+				4F5E38E62DBFF3D900E46A2E /* BulkTrackUITests.xctest */,
+				4F5E38F22DBFF3D900E46A2E /* BulkTrack Watch App.app */,
+				4F5E39012DBFF3DA00E46A2E /* BulkTrack Watch AppTests.xctest */,
+				4F5E390B2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4F5E38CE2DBFF3D700E46A2E /* BulkTrack */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F5E39192DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack" */;
+			buildPhases = (
+				4F5E38CB2DBFF3D700E46A2E /* Sources */,
+				4F5E38CC2DBFF3D700E46A2E /* Frameworks */,
+				4F5E38CD2DBFF3D700E46A2E /* Resources */,
+				4F5E39182DBFF3DA00E46A2E /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4F5E38F52DBFF3D900E46A2E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4F5E38D12DBFF3D700E46A2E /* BulkTrack */,
+			);
+			name = BulkTrack;
+			packageProductDependencies = (
+			);
+			productName = BulkTrack;
+			productReference = 4F5E38CF2DBFF3D700E46A2E /* BulkTrack.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4F5E38DB2DBFF3D900E46A2E /* BulkTrackTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F5E391C2DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrackTests" */;
+			buildPhases = (
+				4F5E38D82DBFF3D900E46A2E /* Sources */,
+				4F5E38D92DBFF3D900E46A2E /* Frameworks */,
+				4F5E38DA2DBFF3D900E46A2E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4F5E38DE2DBFF3D900E46A2E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4F5E38DF2DBFF3D900E46A2E /* BulkTrackTests */,
+			);
+			name = BulkTrackTests;
+			packageProductDependencies = (
+			);
+			productName = BulkTrackTests;
+			productReference = 4F5E38DC2DBFF3D900E46A2E /* BulkTrackTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4F5E38E52DBFF3D900E46A2E /* BulkTrackUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F5E391F2DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrackUITests" */;
+			buildPhases = (
+				4F5E38E22DBFF3D900E46A2E /* Sources */,
+				4F5E38E32DBFF3D900E46A2E /* Frameworks */,
+				4F5E38E42DBFF3D900E46A2E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4F5E38E82DBFF3D900E46A2E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4F5E38E92DBFF3D900E46A2E /* BulkTrackUITests */,
+			);
+			name = BulkTrackUITests;
+			packageProductDependencies = (
+			);
+			productName = BulkTrackUITests;
+			productReference = 4F5E38E62DBFF3D900E46A2E /* BulkTrackUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		4F5E38F12DBFF3D900E46A2E /* BulkTrack Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F5E39152DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack Watch App" */;
+			buildPhases = (
+				4F5E38EE2DBFF3D900E46A2E /* Sources */,
+				4F5E38EF2DBFF3D900E46A2E /* Frameworks */,
+				4F5E38F02DBFF3D900E46A2E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4F5E38F62DBFF3D900E46A2E /* BulkTrack Watch App */,
+			);
+			name = "BulkTrack Watch App";
+			packageProductDependencies = (
+			);
+			productName = "BulkTrack Watch App";
+			productReference = 4F5E38F22DBFF3D900E46A2E /* BulkTrack Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4F5E39002DBFF3DA00E46A2E /* BulkTrack Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F5E39222DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack Watch AppTests" */;
+			buildPhases = (
+				4F5E38FD2DBFF3DA00E46A2E /* Sources */,
+				4F5E38FE2DBFF3DA00E46A2E /* Frameworks */,
+				4F5E38FF2DBFF3DA00E46A2E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4F5E39032DBFF3DA00E46A2E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4F5E39042DBFF3DA00E46A2E /* BulkTrack Watch AppTests */,
+			);
+			name = "BulkTrack Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "BulkTrack Watch AppTests";
+			productReference = 4F5E39012DBFF3DA00E46A2E /* BulkTrack Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4F5E390A2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F5E39252DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack Watch AppUITests" */;
+			buildPhases = (
+				4F5E39072DBFF3DA00E46A2E /* Sources */,
+				4F5E39082DBFF3DA00E46A2E /* Frameworks */,
+				4F5E39092DBFF3DA00E46A2E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4F5E390D2DBFF3DA00E46A2E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4F5E390E2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests */,
+			);
+			name = "BulkTrack Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "BulkTrack Watch AppUITests";
+			productReference = 4F5E390B2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4F5E38C72DBFF3D700E46A2E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1630;
+				LastUpgradeCheck = 1630;
+				TargetAttributes = {
+					4F5E38CE2DBFF3D700E46A2E = {
+						CreatedOnToolsVersion = 16.3;
+					};
+					4F5E38DB2DBFF3D900E46A2E = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 4F5E38CE2DBFF3D700E46A2E;
+					};
+					4F5E38E52DBFF3D900E46A2E = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 4F5E38CE2DBFF3D700E46A2E;
+					};
+					4F5E38F12DBFF3D900E46A2E = {
+						CreatedOnToolsVersion = 16.3;
+					};
+					4F5E39002DBFF3DA00E46A2E = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 4F5E38F12DBFF3D900E46A2E;
+					};
+					4F5E390A2DBFF3DA00E46A2E = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 4F5E38F12DBFF3D900E46A2E;
+					};
+				};
+			};
+			buildConfigurationList = 4F5E38CA2DBFF3D700E46A2E /* Build configuration list for PBXProject "BulkTrack" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4F5E38C62DBFF3D700E46A2E;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 4F5E38D02DBFF3D700E46A2E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4F5E38CE2DBFF3D700E46A2E /* BulkTrack */,
+				4F5E38DB2DBFF3D900E46A2E /* BulkTrackTests */,
+				4F5E38E52DBFF3D900E46A2E /* BulkTrackUITests */,
+				4F5E38F12DBFF3D900E46A2E /* BulkTrack Watch App */,
+				4F5E39002DBFF3DA00E46A2E /* BulkTrack Watch AppTests */,
+				4F5E390A2DBFF3DA00E46A2E /* BulkTrack Watch AppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4F5E38CD2DBFF3D700E46A2E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38DA2DBFF3D900E46A2E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38E42DBFF3D900E46A2E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38F02DBFF3D900E46A2E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38FF2DBFF3DA00E46A2E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E39092DBFF3DA00E46A2E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4F5E38CB2DBFF3D700E46A2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38D82DBFF3D900E46A2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38E22DBFF3D900E46A2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38EE2DBFF3D900E46A2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E38FD2DBFF3DA00E46A2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F5E39072DBFF3DA00E46A2E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4F5E38DE2DBFF3D900E46A2E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F5E38CE2DBFF3D700E46A2E /* BulkTrack */;
+			targetProxy = 4F5E38DD2DBFF3D900E46A2E /* PBXContainerItemProxy */;
+		};
+		4F5E38E82DBFF3D900E46A2E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F5E38CE2DBFF3D700E46A2E /* BulkTrack */;
+			targetProxy = 4F5E38E72DBFF3D900E46A2E /* PBXContainerItemProxy */;
+		};
+		4F5E38F52DBFF3D900E46A2E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F5E38F12DBFF3D900E46A2E /* BulkTrack Watch App */;
+			targetProxy = 4F5E38F42DBFF3D900E46A2E /* PBXContainerItemProxy */;
+		};
+		4F5E39032DBFF3DA00E46A2E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F5E38F12DBFF3D900E46A2E /* BulkTrack Watch App */;
+			targetProxy = 4F5E39022DBFF3DA00E46A2E /* PBXContainerItemProxy */;
+		};
+		4F5E390D2DBFF3DA00E46A2E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F5E38F12DBFF3D900E46A2E /* BulkTrack Watch App */;
+			targetProxy = 4F5E390C2DBFF3DA00E46A2E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		4F5E39132DBFF3DA00E46A2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		4F5E39142DBFF3DA00E46A2E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		4F5E39162DBFF3DA00E46A2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BulkTrack;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.bulk-track.BulkTrack";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.4;
+			};
+			name = Debug;
+		};
+		4F5E39172DBFF3DA00E46A2E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BulkTrack;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.bulk-track.BulkTrack";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.4;
+			};
+			name = Release;
+		};
+		4F5E391A2DBFF3DA00E46A2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BulkTrack;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4F5E391B2DBFF3DA00E46A2E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BulkTrack;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4F5E391D2DBFF3DA00E46A2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrackTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BulkTrack.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BulkTrack";
+			};
+			name = Debug;
+		};
+		4F5E391E2DBFF3DA00E46A2E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrackTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BulkTrack.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BulkTrack";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4F5E39202DBFF3DA00E46A2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrackUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BulkTrack;
+			};
+			name = Debug;
+		};
+		4F5E39212DBFF3DA00E46A2E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrackUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BulkTrack;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4F5E39232DBFF3DA00E46A2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BulkTrack Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BulkTrack Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.4;
+			};
+			name = Debug;
+		};
+		4F5E39242DBFF3DA00E46A2E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BulkTrack Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BulkTrack Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.4;
+			};
+			name = Release;
+		};
+		4F5E39262DBFF3DA00E46A2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "BulkTrack Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.4;
+			};
+			name = Debug;
+		};
+		4F5E39272DBFF3DA00E46A2E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bulk-track.BulkTrack-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "BulkTrack Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.4;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4F5E38CA2DBFF3D700E46A2E /* Build configuration list for PBXProject "BulkTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F5E39132DBFF3DA00E46A2E /* Debug */,
+				4F5E39142DBFF3DA00E46A2E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F5E39152DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F5E39162DBFF3DA00E46A2E /* Debug */,
+				4F5E39172DBFF3DA00E46A2E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F5E39192DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F5E391A2DBFF3DA00E46A2E /* Debug */,
+				4F5E391B2DBFF3DA00E46A2E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F5E391C2DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrackTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F5E391D2DBFF3DA00E46A2E /* Debug */,
+				4F5E391E2DBFF3DA00E46A2E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F5E391F2DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrackUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F5E39202DBFF3DA00E46A2E /* Debug */,
+				4F5E39212DBFF3DA00E46A2E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F5E39222DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F5E39232DBFF3DA00E46A2E /* Debug */,
+				4F5E39242DBFF3DA00E46A2E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F5E39252DBFF3DA00E46A2E /* Build configuration list for PBXNativeTarget "BulkTrack Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F5E39262DBFF3DA00E46A2E /* Debug */,
+				4F5E39272DBFF3DA00E46A2E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4F5E38C72DBFF3D700E46A2E /* Project object */;
+}

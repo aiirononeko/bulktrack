@@ -1,15 +1,19 @@
+//
+//  ContentView.swift
+//  BulkTrack
+//
+//  Created by Ryota Katada on 2025/04/29.
+//
+
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
         VStack {
-            Image(systemName: "figure.strengthtraining.traditional")
+            Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
-            Text("BulkTrack")
-                .font(.headline)
-            Text("Track your workouts on the go")
-                .font(.caption)
+            Text("Hello, world!")
         }
         .padding()
     }
