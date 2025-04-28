@@ -63,99 +63,101 @@ export function WeeklyVolumeChart({ data, chartType = "line", className }: Weekl
 
   return (
     <div className={className}>
-      <ChartContainer config={chartConfig} className="aspect-[4/3] w-full rounded-md border p-2">
-        {chartType === "line" ? (
-          <LineChart data={sortedData}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="weekStartDate"
-              tickFormatter={formatDate}
-              tick={{ fontSize: 12 }}
-              tickMargin={8}
-            />
-            <YAxis
-              width={45}
-              tickFormatter={(value) => `${Math.round(value / 1000)}k`}
-              domain={[0, yAxisMax]}
-              tick={{ fontSize: 12 }}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    if (typeof value === "string") {
-                      return formatDate(value);
-                    }
-                    return String(value);
-                  }}
-                />
-              }
-            />
-            <Line
-              type="monotone"
-              dataKey="totalVolume"
-              name="総挙上量"
-              stroke="hsl(var(--primary))"
-              strokeWidth={2}
-              dot={{ r: 4 }}
-              activeDot={{ r: 6 }}
-              isAnimationActive={true}
-              animationDuration={1000}
-            />
-            {data.some((item) => item.estOneRM !== undefined) && (
+      <ResponsiveContainer width="100%" height={300}>
+        <ChartContainer config={chartConfig} className="w-full h-full">
+          {chartType === "line" ? (
+            <LineChart data={sortedData} margin={{ top: 5, right: 20, left: -15, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="weekStartDate"
+                tickFormatter={formatDate}
+                tick={{ fontSize: 12 }}
+                tickMargin={8}
+              />
+              <YAxis
+                width={45}
+                tickFormatter={(value) => `${Math.round(value / 1000)}k`}
+                domain={[0, yAxisMax]}
+                tick={{ fontSize: 12 }}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => {
+                      if (typeof value === "string") {
+                        return formatDate(value);
+                      }
+                      return String(value);
+                    }}
+                  />
+                }
+              />
               <Line
                 type="monotone"
-                dataKey="estOneRM"
-                name="推定1RM"
-                stroke="hsl(var(--secondary))"
+                dataKey="totalVolume"
+                name="総挙上量"
+                stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
                 isAnimationActive={true}
                 animationDuration={1000}
               />
-            )}
-            <ChartLegend content={<ChartLegendContent />} verticalAlign="top" align="right" />
-          </LineChart>
-        ) : (
-          <BarChart data={sortedData}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="weekStartDate"
-              tickFormatter={formatDate}
-              tick={{ fontSize: 12 }}
-              tickMargin={8}
-            />
-            <YAxis
-              width={45}
-              tickFormatter={(value) => `${Math.round(value / 1000)}k`}
-              domain={[0, yAxisMax]}
-              tick={{ fontSize: 12 }}
-            />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    if (typeof value === "string") {
-                      return formatDate(value);
-                    }
-                    return String(value);
-                  }}
+              {data.some((item) => item.estOneRM !== undefined) && (
+                <Line
+                  type="monotone"
+                  dataKey="estOneRM"
+                  name="推定1RM"
+                  stroke="hsl(var(--secondary))"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                  isAnimationActive={true}
+                  animationDuration={1000}
                 />
-              }
-            />
-            <Bar
-              dataKey="totalVolume"
-              name="総挙上量"
-              fill="hsl(var(--primary))"
-              radius={[4, 4, 0, 0]}
-              isAnimationActive={true}
-              animationDuration={1000}
-            />
-            <ChartLegend content={<ChartLegendContent />} verticalAlign="top" align="right" />
-          </BarChart>
-        )}
-      </ChartContainer>
+              )}
+              <ChartLegend content={<ChartLegendContent />} verticalAlign="top" align="right" />
+            </LineChart>
+          ) : (
+            <BarChart data={sortedData} margin={{ top: 5, right: 20, left: -15, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="weekStartDate"
+                tickFormatter={formatDate}
+                tick={{ fontSize: 12 }}
+                tickMargin={8}
+              />
+              <YAxis
+                width={45}
+                tickFormatter={(value) => `${Math.round(value / 1000)}k`}
+                domain={[0, yAxisMax]}
+                tick={{ fontSize: 12 }}
+              />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => {
+                      if (typeof value === "string") {
+                        return formatDate(value);
+                      }
+                      return String(value);
+                    }}
+                  />
+                }
+              />
+              <Bar
+                dataKey="totalVolume"
+                name="総挙上量"
+                fill="hsl(var(--primary))"
+                radius={[4, 4, 0, 0]}
+                isAnimationActive={true}
+                animationDuration={1000}
+              />
+              <ChartLegend content={<ChartLegendContent />} verticalAlign="top" align="right" />
+            </BarChart>
+          )}
+        </ChartContainer>
+      </ResponsiveContainer>
     </div>
   );
 }

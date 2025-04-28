@@ -17,10 +17,14 @@ export async function loader(args: Route.LoaderArgs) {
     return redirect(`/signin?redirect_url=${args.request.url}`);
   }
 
-  // URLからクエリパラメータを取得
-  const url = new URL(args.request.url);
-  const period = (url.searchParams.get("period") as "12weeks" | "52weeks") || "12weeks";
-  const chartType = (url.searchParams.get("chartType") as "line" | "bar") || "line";
+  // URLからクエリパラメータを取得していた部分をコメントアウト
+  // const url = new URL(args.request.url);
+  // const period = (url.searchParams.get("period") as "12weeks" | "52weeks") || "12weeks";
+  // const chartType = (url.searchParams.get("chartType") as "line" | "bar") || "line";
+
+  // 固定値を設定
+  const period: "12weeks" | "52weeks" = "12weeks";
+  const chartType: "line" | "bar" = "bar";
 
   // ダッシュボード設定
   const settings: DashboardSettings = {
