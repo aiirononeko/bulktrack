@@ -26,28 +26,31 @@ struct ContentView: View {
 
     func fetchHealthStatus() {
         guard let url = URL(string: "http://localhost:5555/health") else {
-            healthStatus = "Invalid URL"
+            let errorStatus = "Invalid URL"
+            self.healthStatus = errorStatus
+            // Watchにもエラー情報を送る (任意)
+            // WatchSessionManager.shared.sendHealthStatus(errorStatus)
             return
         }
 
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {
+                var currentStatus: String // 送信するステータスを保持する変数
+
                 if let error = error {
-                    healthStatus = "Error: \(error.localizedDescription)"
-                    return
-                }
-
-                guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode) else {
-                    healthStatus = "Error: Invalid response"
-                    return
-                }
-
-                if let data = data, let status = String(data: data, encoding: .utf8) {
-                    healthStatus = "Status: \(status)"
+                    // NWError connection refused のような詳細情報も含める
+                    currentStatus = "Error: \(error.localizedDescription)"
+                } else if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+                    currentStatus = "Error: Invalid response (\(httpResponse.statusCode))"
+                } else if let data = data, let status = String(data: data, encoding: .utf8) {
+                    currentStatus = "Status: \(status)" // 成功時のステータス
                 } else {
-                    healthStatus = "Error: Could not parse response"
+                    currentStatus = "Error: Could not parse response"
                 }
+
+                self.healthStatus = currentStatus // 自身のViewを更新
+                // 取得したステータスをWatchに送信
+                WatchSessionManager.shared.sendHealthStatus(currentStatus)
             }
         }
         task.resume()
