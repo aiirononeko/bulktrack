@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-// import UIKit // watchOSでは不要なため削除
-
 // タブを識別するためのenum
 enum Tab {
     case dashboard
@@ -39,13 +37,9 @@ struct ContentView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)  // 画面全体に広がるように
-            // 背景色を薄いグレーに設定
-            .background(Color(red: 0.95, green: 0.95, blue: 0.97))
 
             // --- カスタムボトムバー ---
             customBottomBar
-                // ボトムバーの背景色を白に変更
-                .background(.white)
         }
         .ignoresSafeArea(.keyboard)  // キーボード表示時にレイアウトが崩れるのを防ぐ
         .sheet(isPresented: $showingSelectMenu) {  // シート表示はVStackの外で定義
@@ -85,6 +79,7 @@ struct ContentView: View {
             bottomBarButton(
                 tab: .settings, current: $currentView, label: "アプリ設定", systemImage: "gearshape")
         }
+        .background(.white)
         .padding(.horizontal)  // 左右にパディングを追加
         .padding(.top, 8)  // 上部に少しパディング
         .padding(.bottom, 8)  // 固定値に変更
@@ -134,46 +129,6 @@ struct ContentView: View {
     }
 }
 
-// --- 仮のビュー定義 (最終的には別ファイルに分割推奨) ---
-struct DashboardView: View {
-    var body: some View {
-        NavigationStack {  // 各タブのコンテンツはNavigationStackを持つことが多い
-            VStack {
-                Image(systemName: "chart.bar.fill")
-                    .imageScale(.large)
-                Text("ダッシュボード画面")
-            }
-            .navigationTitle("ダッシュボード")
-        }
-    }
-}
-
-struct HistoryView: View {
-    var body: some View {
-        NavigationStack {
-            Text("履歴画面")
-                .navigationTitle("トレーニング履歴")
-        }
-    }
-}
-
-struct SettingsView: View {
-    var body: some View {
-        NavigationStack {
-            Text("アプリ設定画面")
-                .navigationTitle("アプリ設定")
-        }
-    }
-}
-
-struct MenuView: View {  // MenuViewを定義
-    var body: some View {
-        Text("メニュー画面")
-            .navigationTitle("メニュー")
-    }
-}
-
-// Previewも更新
 #Preview {
     ContentView()
 }
