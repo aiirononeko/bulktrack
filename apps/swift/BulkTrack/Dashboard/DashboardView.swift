@@ -15,16 +15,104 @@ struct WorkoutData: Identifiable {
     let weeklyVolume: Int
 }
 
-// 1ページ目: 仮のプレースホルダービュー
+// 1ページ目: プレースホルダービュー (カスタムプログレスリング)
 struct PlaceholderDashboardView: View {
+    // ダミーデータ
+    let currentWeekVolume = 8000
+    let previousWeekVolume = 20500
+    let remainingVolume = 1500
+
+    // 目標ボリューム (例: 先週の 105%)
+    var targetVolume: Double {
+        Double(previousWeekVolume) * 1.05
+    }
+    // 0 除算を避けるための安全な目標値
+    var safeTargetVolume: Double {
+        max(targetVolume, 1) // targetVolume が 0 以下にならないように
+    }
+    // ゲージの値 (0.0 ~ 1.0 の範囲に正規化)
+    var gaugeValue: Double {
+        min(Double(currentWeekVolume) / safeTargetVolume, 1.0) // 1.0 を超えないように
+    }
+
+    // --- プログレスリングの太さ ---
+    let ringThickness: CGFloat = 10 // 太さを調整可能
+
     var body: some View {
-        VStack {
-            Image(systemName: "figure.walk.diamond.fill")
-                .font(.largeTitle)
-            Text("新しいダッシュボード (1ページ目)")
+        VStack(spacing: 0) {
+            // --- タイトル ---
+            Text("今週のトレーニングボリューム")
+                .font(.headline)
+                .padding(.top)
+                .padding(.bottom)
+                .padding(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // --- 中央: カスタムプログレスリングとボリューム表示 ---
+            VStack {
+                ZStack {
+                    // 背景のリング (グレー)
+                    Circle()
+                        .stroke(Color(.systemGray5), lineWidth: ringThickness)
+
+                    // 進捗リング (黒)
+                    Circle()
+                        .trim(from: 0, to: gaugeValue) // 進捗に合わせてトリミング
+                        .stroke(Color.black, style: StrokeStyle(lineWidth: ringThickness, lineCap: .round)) // 太さと端の形状を指定
+                        .rotationEffect(.degrees(-90)) // 12時の位置から開始するように回転
+
+                    // 中央のテキスト (VStack で縦に並べる)
+                    VStack(spacing: 2) { // spacing で数字とラベルの間隔を調整
+                        Text("\(currentWeekVolume) kg")
+                            .font(.title.weight(.bold))
+                        Text("ボリューム") // ラベルを追加
+                            .font(.caption)   // キャプションスタイル
+                            .foregroundColor(.gray) // 色をグレーに変更
+                    }
+                }
+                .frame(width: 160, height: 160)
+                .padding(.bottom, 10)
+            }
+            .padding(.vertical, 25)
+
+            // --- 先週・目標・残りの表示 (目標を中央に、幅固定) ---
+            HStack(spacing: 10) {
+                // 左: 先週のボリューム
+                VStack {
+                    Text("\(previousWeekVolume) kg")
+                        .font(.title2.weight(.bold))
+                    Text("先週")
+                        .font(.caption)
+                        .foregroundColor(.gray) // 色をグレーに変更
+                }
+                .frame(width: 120) // 幅を固定 (値は調整可能)
+
+                // 中央: 目標ボリューム
+                VStack {
+                    Text("\(Int(targetVolume)) kg")
+                        .font(.title2.weight(.bold))
+                    Text("目標")
+                        .font(.caption)
+                        .foregroundColor(.gray) // 色をグレーに変更
+                }
+                .frame(width: 120) // 幅を固定
+
+                // 右: 残りボリューム
+                VStack {
+                    Text("\(remainingVolume) kg")
+                        .font(.title2.weight(.bold))
+                    Text("残り")
+                        .font(.caption)
+                        .foregroundColor(.gray) // 色をグレーに変更
+                }
+                .frame(width: 120) // 幅を固定
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 30)    // 下部の余白
+
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.bottom, 30)
     }
 }
 
@@ -87,7 +175,7 @@ struct DashboardView: View {
             GeometryReader { geometry in
                 VStack(spacing: 0) {
                     // --- 上部: スワイプ可能ダッシュボードエリア ---
-                    let dashboardHeight = (geometry.size.height / 2) + 30
+                    let dashboardHeight = (geometry.size.height / 2) + 30 + 30
                     TabView {
                         PlaceholderDashboardView()
                             .tag(0)
