@@ -107,7 +107,7 @@ struct ContentView: View {
             bottomBarButton(
                 tab: .settings, current: $currentView, label: "アプリ設定", systemImage: "gearshape")
         }
-        .background(.white)
+        .background(Color(uiColor: .systemBackground))
         .padding(.horizontal)  // 左右にパディングを追加
         .padding(.top, 8)  // 上部に少しパディング
         .padding(.bottom, 8)  // 固定値に変更
@@ -115,7 +115,7 @@ struct ContentView: View {
         .overlay(
             Rectangle()
                 .frame(height: 0.5)  // 線の太さ
-                .foregroundColor(Color.gray.opacity(0.5)),  // 線の色
+                .foregroundColor(Color(uiColor: .separator)),  // 境界線の色を変更
             alignment: .top  // 上端に配置
         )
     }
@@ -127,9 +127,9 @@ struct ContentView: View {
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(Color(uiColor: .systemBackground))
                 .padding(12)
-                .background(Circle().fill(.black))
+                .background(Circle().fill(Color.primary))
         }
         .offset(y: -4)
     }
@@ -148,7 +148,7 @@ struct ContentView: View {
                     .font(.caption)
             }
             // 選択されているタブの色を変える
-            .foregroundColor(current.wrappedValue == tab ? .black : .gray)
+            .foregroundColor(current.wrappedValue == tab ? .primary : .secondary)
         }
         // タップ領域を広げるため (なくても良い)
         .frame(maxWidth: .infinity)

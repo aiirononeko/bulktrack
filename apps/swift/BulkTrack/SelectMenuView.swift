@@ -64,7 +64,7 @@ struct MenuCardView: View {
                 .font(.headline)
             Text(menu.description)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
         }
         .padding(.vertical, 8) // カードの上下に少しパディング
     }

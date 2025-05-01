@@ -128,8 +128,8 @@ struct TrainingView: View {
                                 Image(systemName: "arrow.clockwise")
                                     .font(.title2)
                                     .frame(width: 60, height: 60)
-                                    .background(Color.black)
-                                    .foregroundColor(.white)
+                                    .background(Color.primary)
+                                    .foregroundColor(Color(uiColor: .systemBackground))
                                     .clipShape(Circle())
                             }
 
@@ -142,8 +142,8 @@ struct TrainingView: View {
                                 Image(systemName: "plus")
                                     .font(.title2)
                                     .frame(width: 60, height: 60)
-                                    .background(Color.black)
-                                    .foregroundColor(.white)
+                                    .background(Color.primary)
+                                    .foregroundColor(Color(uiColor: .systemBackground))
                                     .clipShape(Circle())
                             }
 
@@ -158,8 +158,8 @@ struct TrainingView: View {
                                 Image(systemName: isIntervalTimerRunning ? "pause.fill" : "play.fill")
                                     .font(.title2)
                                     .frame(width: 60, height: 60)
-                                    .background(Color.black)
-                                    .foregroundColor(.white)
+                                    .background(Color.primary)
+                                    .foregroundColor(Color(uiColor: .systemBackground))
                                     .clipShape(Circle())
                             }
                         }
@@ -189,7 +189,7 @@ struct TrainingView: View {
                                     Text(exercises[exerciseIndex].records[setIndex].weight.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].weight)
                                         .padding(8)
                                         .frame(maxWidth: .infinity)
-                                        .background(Color.gray.opacity(0.1))
+                                        .background(Color(uiColor: .tertiarySystemBackground))
                                         .cornerRadius(5)
                                         .onTapGesture {
                                             showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .weight)
@@ -198,7 +198,7 @@ struct TrainingView: View {
                                     Text(exercises[exerciseIndex].records[setIndex].reps.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].reps)
                                         .padding(8)
                                         .frame(maxWidth: .infinity)
-                                        .background(Color.gray.opacity(0.1))
+                                        .background(Color(uiColor: .tertiarySystemBackground))
                                         .cornerRadius(5)
                                         .onTapGesture {
                                             showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .reps)
@@ -207,7 +207,7 @@ struct TrainingView: View {
                                     Text(exercises[exerciseIndex].records[setIndex].rpe.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].rpe)
                                         .padding(8)
                                         .frame(maxWidth: .infinity)
-                                        .background(Color.gray.opacity(0.1))
+                                        .background(Color(uiColor: .tertiarySystemBackground))
                                         .cornerRadius(5)
                                         .onTapGesture {
                                             showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .rpe)
@@ -221,7 +221,7 @@ struct TrainingView: View {
                         .padding(.top, 30) // タイトルの上にさらにパディングを追加
                         .padding(.bottom, 50) // カード下部にパディングを追加してドットとの間にスペースを作る
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading) // 左上揃え
-                        .background(.white) // カードの背景を白に変更
+                        .background(Color(uiColor: .systemBackground))
                         .cornerRadius(10)
                         .padding(.horizontal, 20) // 左右に少し余白を持たせる
                         .tag(exerciseIndex) // 各ページにインデックスをタグ付け
@@ -247,8 +247,8 @@ struct TrainingView: View {
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.black)
-                        .foregroundColor(.white)
+                        .background(Color.primary)
+                        .foregroundColor(Color(uiColor: .systemBackground))
                         .cornerRadius(8)
                 }
                 .padding(.horizontal) // 左右のパディング
@@ -266,14 +266,14 @@ struct TrainingView: View {
             ToolbarItem(placement: .navigationBarTrailing) { // 右端に配置
                 Text(formattedElapsedTime)
                     .font(.system(size: 18, weight: .semibold, design: .monospaced)) // フォントサイズを調整
-                    .foregroundColor(.black) // 必要に応じて色を設定 (ここでは黒)
+                    .foregroundColor(.primary) // <<< 変更
             }
         }
         .onAppear {
             // 全体タイマー開始
             startTimer()
             // UIPageControlの外観を設定
-            UIPageControl.appearance().currentPageIndicatorTintColor = .black
+            UIPageControl.appearance().currentPageIndicatorTintColor = .label
             UIPageControl.appearance().pageIndicatorTintColor = .systemGray4
         }
         .onDisappear { // 画面が消えるときにタイマーを止める

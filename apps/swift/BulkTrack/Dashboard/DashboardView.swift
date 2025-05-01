@@ -58,7 +58,7 @@ struct PlaceholderDashboardView: View {
                     // 進捗リング (黒)
                     Circle()
                         .trim(from: 0, to: gaugeValue) // 進捗に合わせてトリミング
-                        .stroke(Color.black, style: StrokeStyle(lineWidth: ringThickness, lineCap: .round)) // 太さと端の形状を指定
+                        .stroke(Color.primary, style: StrokeStyle(lineWidth: ringThickness, lineCap: .round)) // 太さと端の形状を指定
                         .rotationEffect(.degrees(-90)) // 12時の位置から開始するように回転
 
                     // 中央のテキスト (VStack で縦に並べる)
@@ -67,7 +67,7 @@ struct PlaceholderDashboardView: View {
                             .font(.title.weight(.bold))
                         Text("ボリューム") // ラベルを追加
                             .font(.caption)   // キャプションスタイル
-                            .foregroundColor(.gray) // 色をグレーに変更
+                            .foregroundColor(.secondary) // 色を .secondary に変更
                     }
                 }
                 .frame(width: 160, height: 160)
@@ -83,7 +83,7 @@ struct PlaceholderDashboardView: View {
                         .font(.title2.weight(.bold))
                     Text("先週")
                         .font(.caption)
-                        .foregroundColor(.gray) // 色をグレーに変更
+                        .foregroundColor(.secondary) // 色を .secondary に変更
                 }
                 .frame(width: 120) // 幅を固定 (値は調整可能)
 
@@ -93,7 +93,7 @@ struct PlaceholderDashboardView: View {
                         .font(.title2.weight(.bold))
                     Text("目標")
                         .font(.caption)
-                        .foregroundColor(.gray) // 色をグレーに変更
+                        .foregroundColor(.secondary) // 色を .secondary に変更
                 }
                 .frame(width: 120) // 幅を固定
 
@@ -103,7 +103,7 @@ struct PlaceholderDashboardView: View {
                         .font(.title2.weight(.bold))
                     Text("残り")
                         .font(.caption)
-                        .foregroundColor(.gray) // 色をグレーに変更
+                        .foregroundColor(.secondary) // 色を .secondary に変更
                 }
                 .frame(width: 120) // 幅を固定
             }
@@ -143,7 +143,7 @@ struct VolumeChartView: View {
                     x: .value("週", item.startDateOfWeek),
                     y: .value("トレーニングボリューム", item.weeklyVolume)
                 )
-                .foregroundStyle(.black) // 棒グラフの色を黒に
+                .foregroundStyle(Color.primary) // 棒グラフの色を .primary に変更
             }
             .chartYAxis { 
                 let maxVolume = data.map { $0.weeklyVolume }.max() ?? 0
@@ -183,7 +183,7 @@ struct DashboardView: View {
                         VolumeChartView()
                             .tag(1)
                     }
-                    .background(Color.white) // ダッシュボードエリアの背景は白
+                    .background(Color(uiColor: .systemBackground)) // ダッシュボードエリアの背景は .systemBackground
                     .frame(height: dashboardHeight) // 高さを計算値に設定
                     .tabViewStyle(.page(indexDisplayMode: .automatic))
                     
@@ -197,7 +197,7 @@ struct DashboardView: View {
             .navigationTitle("ダッシュボード")
             // --- .onAppear で UIPageControl のドット色を設定 ---
             .onAppear {
-                UIPageControl.appearance().currentPageIndicatorTintColor = .black
+                UIPageControl.appearance().currentPageIndicatorTintColor = .label // 色を .label に変更
                 UIPageControl.appearance().pageIndicatorTintColor = .systemGray4
             }
         }
