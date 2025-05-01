@@ -9,8 +9,10 @@ import SwiftUI
 
 struct MenuView: View {
     var body: some View {
-        Text("メニュー画面")
-            .navigationTitle("メニュー管理")
+        NavigationStack {
+            Text("メニュー画面")
+                .navigationTitle("メニュー管理")
+        }
     }
 }
 

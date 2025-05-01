@@ -28,8 +28,7 @@ struct ContentView: View {
                 case .dashboard:
                     DashboardView()
                 case .menu:
-                    // NavigationStackでラップ
-                    NavigationStack { MenuView() }
+                    MenuView()
                 case .history:
                     HistoryView()
                 case .settings:
@@ -84,7 +83,6 @@ struct ContentView: View {
         .padding(.top, 8)  // 上部に少しパディング
         .padding(.bottom, 8)  // 固定値に変更
         .frame(height: 60)  // 固定の高さに変更
-        // --- 上部ボーダーラインを追加 ---
         .overlay(
             Rectangle()
                 .frame(height: 0.5)  // 線の太さ
@@ -93,18 +91,17 @@ struct ContentView: View {
         )
     }
 
-    // フローティングではなくなったプラスボタンのビュー定義
+    // プラスボタンのビュー定義
     var plusButton: some View {
         Button {
             showingSelectMenu = true
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 18, weight: .semibold))  // 少しサイズ調整
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
-                .padding(12)  // 少しサイズ調整
+                .padding(12)
                 .background(Circle().fill(.black))
         }
-        // オフセットを追加
         .offset(y: -4)
     }
 
