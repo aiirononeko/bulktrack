@@ -14,7 +14,12 @@ struct SetRecord: Identifiable {
     var reps: String = ""
     var rpe: String = "" // Rate of Perceived Exertion
 }
-// ---------------------------
+
+// --- 入力フィールド種別 ---
+enum FieldType {
+    case weight, reps, rpe
+}
+// -----------------------
 
 // --- ダミーのエクササイズデータ構造 ---
 struct Exercise: Identifiable {
@@ -64,6 +69,14 @@ struct TrainingView: View {
     // --- 現在選択中のエクササイズのインデックス ---
     @State private var selectedExerciseIndex = 0
     // -------------------------------------
+
+    // --- 数値セレクター関連の状態変数 ---
+    @State private var isShowingNumberSelector = false
+    // 選択中のターゲット (exerciseIndex, setIndex, fieldType)
+    @State private var selectedInputTarget: (Int, Int, FieldType)? = nil
+    // ピッカーで編集中の一時的な値
+    @State private var currentEditingValue: String = ""
+    // ---------------------------------
 
     // --- 表示中カードの動的な高さ計算 ---
     var currentCardHeight: CGFloat {
@@ -172,21 +185,34 @@ struct TrainingView: View {
                                     Text("Set \(setIndex + 1)")
                                         .frame(width: 50, alignment: .leading)
 
-                                    // Bindingのヘルパー関数を使うか、$exercisesを使う
-                                    TextField("Weight", text: $exercises[exerciseIndex].records[setIndex].weight)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                        .keyboardType(.decimalPad)
+                                    // --- TextFieldをタップ可能なTextに変更 ---
+                                    Text(exercises[exerciseIndex].records[setIndex].weight.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].weight)
+                                        .padding(8)
                                         .frame(maxWidth: .infinity)
+                                        .background(Color.gray.opacity(0.1))
+                                        .cornerRadius(5)
+                                        .onTapGesture {
+                                            showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .weight)
+                                        }
 
-                                    TextField("Reps", text: $exercises[exerciseIndex].records[setIndex].reps)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                        .keyboardType(.numberPad)
+                                    Text(exercises[exerciseIndex].records[setIndex].reps.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].reps)
+                                        .padding(8)
                                         .frame(maxWidth: .infinity)
+                                        .background(Color.gray.opacity(0.1))
+                                        .cornerRadius(5)
+                                        .onTapGesture {
+                                            showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .reps)
+                                        }
 
-                                    TextField("RPE", text: $exercises[exerciseIndex].records[setIndex].rpe)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                        .keyboardType(.decimalPad) // RPE 8.5 なども考慮
+                                    Text(exercises[exerciseIndex].records[setIndex].rpe.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].rpe)
+                                        .padding(8)
                                         .frame(maxWidth: .infinity)
+                                        .background(Color.gray.opacity(0.1))
+                                        .cornerRadius(5)
+                                        .onTapGesture {
+                                            showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .rpe)
+                                        }
+                                    // --------------------------------------
                                 }
                             }
                             Spacer() // 上に詰める
@@ -229,6 +255,11 @@ struct TrainingView: View {
                 .padding(.bottom) // 下部のパディング (SafeAreaを考慮)
             }
             // ---------------------------
+
+            // --- 数値セレクター表示関数 ---
+            if isShowingNumberSelector {
+                numberSelectorView
+            }
         }
         .navigationTitle("トレーニング") // 仮のタイトル
         .toolbar { // ← toolbar モディファイアを追加
@@ -300,6 +331,124 @@ struct TrainingView: View {
     }
     // ---------------------------
 
+    // --- 数値セレクター表示関数 ---
+    func showNumberSelector(exerciseIndex: Int, setIndex: Int, fieldType: FieldType) {
+        selectedInputTarget = (exerciseIndex, setIndex, fieldType)
+        // 現在の値をピッカーの初期値として設定
+        switch fieldType {
+        case .weight:
+            currentEditingValue = exercises[exerciseIndex].records[setIndex].weight
+        case .reps:
+            currentEditingValue = exercises[exerciseIndex].records[setIndex].reps
+        case .rpe:
+            currentEditingValue = exercises[exerciseIndex].records[setIndex].rpe
+        }
+        // 空の場合のデフォルト値 (Pickerが空文字を扱えないため)
+        if currentEditingValue.isEmpty {
+            switch fieldType {
+            case .weight: currentEditingValue = "60"
+            case .reps: currentEditingValue = "10"
+            case .rpe: currentEditingValue = "8.0"
+            }
+        }
+        withAnimation {
+            isShowingNumberSelector = true
+        }
+    }
+
+    // --- 数値セレクターで選択した値を保存する関数 ---
+    func saveSelection() {
+        guard let target = selectedInputTarget else { return }
+        let (exerciseIndex, setIndex, fieldType) = target
+
+        switch fieldType {
+        case .weight:
+            exercises[exerciseIndex].records[setIndex].weight = currentEditingValue
+        case .reps:
+            exercises[exerciseIndex].records[setIndex].reps = currentEditingValue
+        case .rpe:
+            exercises[exerciseIndex].records[setIndex].rpe = currentEditingValue
+        }
+
+        closeNumberSelector()
+    }
+
+    // --- 数値セレクターを閉じる関数 ---
+    func closeNumberSelector() {
+        withAnimation {
+            isShowingNumberSelector = false
+        }
+        selectedInputTarget = nil // ターゲットをリセット
+    }
+
+    // --- 数値セレクターのビュー定義 ---
+    @ViewBuilder
+    private var numberSelectorView: some View {
+        // 背景を暗くするオーバーレイ
+        Color.black.opacity(0.4)
+            .edgesIgnoringSafeArea(.all)
+            .onTapGesture { closeNumberSelector() } // 背景タップで閉じる
+
+        VStack(spacing: 0) {
+            Spacer() // シートを下部に押しやる
+
+            VStack(spacing: 15) {
+                HStack {
+                    Button("キャンセル") { closeNumberSelector() }
+                    Spacer()
+                    Text(selectorTitle) // "Weight", "Reps", "RPE"
+                        .font(.headline)
+                    Spacer()
+                    Button("完了") { saveSelection() }
+                        .fontWeight(.bold)
+                }
+                .padding([.horizontal, .top])
+
+                Divider()
+
+                Picker("数値を選択", selection: $currentEditingValue) {
+                    ForEach(pickerRange, id: \.self) { value in
+                        Text(value)
+                    }
+                }
+                .pickerStyle(.wheel) // スライド式のピッカー
+                .labelsHidden()
+                // .frame(maxHeight: 200) // Pickerの高さを制限する場合
+
+            }
+            .background(Color(uiColor: .systemBackground)) // システムの背景色
+            .cornerRadius(15, corners: [.topLeft, .topRight]) // 上部の角だけ丸める
+        }
+        .edgesIgnoringSafeArea(.bottom) // 下のセーフエリアを無視
+        .transition(.move(edge: .bottom)) // 下からスライドアニメーション
+    }
+
+    // --- ピッカーのタイトル ---
+    private var selectorTitle: String {
+        guard let target = selectedInputTarget else { return "" }
+        switch target.2 { // fieldType
+        case .weight: return "重量 (kg)"
+        case .reps: return "回数"
+        case .rpe: return "RPE"
+        }
+    }
+
+    // --- ピッカーの表示範囲 ---
+    private var pickerRange: [String] {
+        guard let target = selectedInputTarget else { return [] }
+        switch target.2 { // fieldType
+        case .weight:
+            // 0.0kg から 300.0kg まで 0.5kg 刻み (例)
+            return stride(from: 0.0, through: 300.0, by: 0.5).map { String(format: "%.1f", $0) }
+        case .reps:
+            // 0回 から 50回 まで 1回 刻み (例)
+            return (0...50).map { String($0) }
+        case .rpe:
+            // 6.0 から 10.0 まで 0.5 刻み (例)
+            return stride(from: 6.0, through: 10.0, by: 0.5).map { String(format: "%.1f", $0) }
+        }
+    }
+
     /*
     // TODO: API通信を行う関数
     func fetchMenuDetails() {
@@ -316,6 +465,24 @@ struct TrainingView: View {
     }
     */
 }
+
+// --- 角丸を特定箇所に適用するための拡張 ---
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape( RoundedCorner(radius: radius, corners: corners) )
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
+    }
+}
+// -----------------------------------------
 
 #Preview {
     NavigationView {
