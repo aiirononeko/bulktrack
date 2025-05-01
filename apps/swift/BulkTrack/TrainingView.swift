@@ -7,6 +7,14 @@
 
 import SwiftUI
 
+// --- ダミーのエクササイズデータ構造 ---
+struct Exercise: Identifiable {
+    let id = UUID()
+    let title: String
+    // TODO: 他のプロパティ (セット数、レップ数、重量など) を追加
+}
+// --------------------------------
+
 struct TrainingView: View {
     // ContentView から渡されるメニューID
     let menuID: UUID
@@ -24,6 +32,20 @@ struct TrainingView: View {
 
     // TODO: APIから取得したメニュー詳細を保持する状態変数
     // @State private var menuDetails: TrainingMenu? = nil
+
+    // --- ダミーのエクササイズデータ ---
+    @State private var exercises: [Exercise] = [
+        Exercise(title: "ベンチプレス"),
+        Exercise(title: "スクワット"),
+        Exercise(title: "デッドリフト"),
+        Exercise(title: "ショルダープレス"),
+        Exercise(title: "ラットプルダウン")
+    ]
+    // -----------------------------
+
+    // --- 現在選択中のエクササイズのインデックス ---
+    @State private var selectedExerciseIndex = 0
+    // -------------------------------------
 
     // 経過時間をフォーマットするコンピューテッドプロパティ
     var formattedElapsedTime: String {
@@ -74,16 +96,30 @@ struct TrainingView: View {
             .padding(.vertical) // 上下にパディング
             // ---------------------------
 
-            Text("選択中のメニューID: \(menuID.uuidString)")
-                .font(.body)
-                .padding(.leading) // 左寄せにするため padding を調整
+            // --- エクササイズカード表示 (ページング) ---
+            TabView(selection: $selectedExerciseIndex) {
+                ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                    VStack {
+                        Text(exercise.title)
+                            .font(.headline)
+                            .padding()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity) // TabView内で可能な限り広がるように
+                    .background(.white) // カードの背景を白に変更
+                    .cornerRadius(10)
+                    .padding(.horizontal, 20) // 左右に少し余白を持たせる
+                    .tag(index) // 各ページにインデックスをタグ付け
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .automatic)) // ページングスタイルとドット表示
+            .frame(height: 120) // TabViewの高さを調整
+            // ------------------------------------
 
             // TODO: APIから取得したメニュー詳細を表示するUI
             // if let details = menuDetails { ... }
 
             Spacer()
         }
-        // TODO: APIから取得したメニュー名を表示するように変更
         .navigationTitle("トレーニング") // 仮のタイトル
         .toolbar { // ← toolbar モディファイアを追加
             ToolbarItem(placement: .navigationBarTrailing) { // 右端に配置
@@ -93,11 +129,17 @@ struct TrainingView: View {
             }
         }
         .onAppear {
+            // 全体タイマー開始
             startTimer()
+            // UIPageControlの外観を設定
+            UIPageControl.appearance().currentPageIndicatorTintColor = .black
+            UIPageControl.appearance().pageIndicatorTintColor = .systemGray4
         }
-        .onDisappear {
-            stopTimer()
-        }
+        .onDisappear { // 画面が消えるときにタイマーを止める
+             stopTimer() // 全体タイマー
+             stopIntervalTimer() // インターバルタイマー
+         }
+         .background(Color(uiColor: .systemGray6)) // ビュー全体の背景をグレーに
     }
 
     // タイマーを開始する関数
