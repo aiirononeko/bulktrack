@@ -22,9 +22,9 @@ struct PlaceholderDashboardView: View {
     let previousWeekVolume = 20500
     let remainingVolume = 1500
 
-    // 目標ボリューム (例: 先週の 105%)
+    // 目標ボリューム (例: 先週の 101%)
     var targetVolume: Double {
-        Double(previousWeekVolume) * 1.05
+        Double(previousWeekVolume) * 1.01
     }
     // 0 除算を避けるための安全な目標値
     var safeTargetVolume: Double {

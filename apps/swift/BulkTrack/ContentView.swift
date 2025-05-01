@@ -18,33 +18,62 @@ enum Tab {
 struct ContentView: View {
     @State private var currentView: Tab = .dashboard
     @State private var showingSelectMenu = false
+    // トレーニングビュー表示用の状態
+    @State private var showingTrainingView = false
+    // 選択されたメニューIDを保持する状態 (UUID?)
+    @State private var selectedTrainingMenuID: UUID? = nil
 
     var body: some View {
         VStack(spacing: 0) {  // メインコンテンツとボトムバーを縦に配置
-            // --- メインコンテンツ表示エリア ---
-            // currentView の値に応じて表示するビューを切り替え
-            ZStack {  // ZStack を使うことで切り替えアニメーションなどを後で追加しやすくなる
-                switch currentView {
-                case .dashboard:
-                    DashboardView()
-                case .menu:
-                    MenuView()
-                case .history:
-                    HistoryView()
-                case .settings:
-                    SettingsView()
+            // --- メインコンテンツ表示エリアを NavigationStack でラップ ---
+            NavigationStack {
+                ZStack {
+                    // --- 現在のタブに応じてビューを表示 ---
+                    switch currentView {
+                    case .dashboard:
+                        DashboardView()
+                    case .menu:
+                        MenuView()
+                    case .history:
+                        HistoryView()
+                    case .settings:
+                        SettingsView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)  // 画面全体に広がるように
+                // .navigationBarHidden(true) は NavigationStack では不要な場合が多い
+                // --- navigationDestination モディファイアを追加 ---
+                .navigationDestination(isPresented: $showingTrainingView) {
+                    // isPresented が true になったときに遷移先ビューを生成
+                    trainingDestinationView()
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)  // 画面全体に広がるように
 
             // --- カスタムボトムバー ---
             customBottomBar
         }
         .ignoresSafeArea(.keyboard)  // キーボード表示時にレイアウトが崩れるのを防ぐ
-        .sheet(isPresented: $showingSelectMenu) {  // シート表示はVStackの外で定義
-            // TODO: プラスボタンが押されたときに表示するモーダルビュー
-            Text("トレーニングするメニューを選択してください")
-                .presentationDetents([.medium])  // シートの高さを調整可能にする
+        .sheet(isPresented: $showingSelectMenu, onDismiss: {
+            // シートが閉じたときに、メニューIDが選択されていたらTrainingViewを表示
+            if selectedTrainingMenuID != nil {
+                showingTrainingView = true
+            }
+        }) {
+            // SelectMenuView に ID 用の binding を渡す
+            SelectMenuView(
+                showingSelectMenu: $showingSelectMenu,
+                selectedTrainingMenuID: $selectedTrainingMenuID // IDのBindingに変更
+            )
+                .presentationDetents([.medium])
+        }
+    }
+
+    // TrainingView を生成するヘルパー関数 (ID が nil でないことを保証)
+    @ViewBuilder
+    private func trainingDestinationView() -> some View {
+        if let menuID = selectedTrainingMenuID {
+            // TrainingView に ID のみを渡す (isPresented は不要)
+            TrainingView(menuID: menuID)
         }
     }
 
