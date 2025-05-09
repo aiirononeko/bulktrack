@@ -20,7 +20,7 @@ struct ContentView: View {
     @State private var showingSelectMenu = false
     // トレーニングビュー表示用の状態
     @State private var showingTrainingView = false
-    // 選択されたメニューIDを保持する状態 (UUID?)
+    // 選択されたメニューIDを保持する状態 (UUID)
     @State private var selectedTrainingMenuID: UUID? = nil
 
     var body: some View {
@@ -41,7 +41,6 @@ struct ContentView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)  // 画面全体に広がるように
-                // .navigationBarHidden(true) は NavigationStack では不要な場合が多い
                 // --- navigationDestination モディファイアを追加 ---
                 .navigationDestination(isPresented: $showingTrainingView) {
                     // isPresented が true になったときに遷移先ビューを生成
@@ -72,8 +71,13 @@ struct ContentView: View {
     @ViewBuilder
     private func trainingDestinationView() -> some View {
         if let menuID = selectedTrainingMenuID {
-            // TrainingView に ID のみを渡す (isPresented は不要)
-            TrainingView(menuID: menuID)
+            // TrainingView に ID と dismissAndGoHome クロージャを渡す
+            TrainingView(menuID: menuID) {
+                // このクロージャ内で ContentView の状態を変更
+                currentView = .dashboard // ホームタブに戻す
+                showingTrainingView = false // TrainingView を閉じる
+                selectedTrainingMenuID = nil // 選択したメニューIDをリセット (必要に応じて)
+            }
         }
     }
 

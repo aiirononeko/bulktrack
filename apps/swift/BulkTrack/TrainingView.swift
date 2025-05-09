@@ -41,21 +41,23 @@ struct Exercise: Identifiable {
 struct TrainingView: View {
     // ContentView から渡されるメニューID
     let menuID: UUID
-
+    // ホームに戻るためのアクション
+    var dismissAndGoHome: () -> Void
+    
     // タイマー用の状態変数
     @State private var elapsedTime: TimeInterval = 0
     @State private var timer: Timer? = nil
-
+    
     // --- インターバルタイマー用の状態変数 ---
     @State private var targetInterval: TimeInterval = 60 // 仮のインターバル時間 (60秒)
     @State private var intervalRemainingTime: TimeInterval = 60 // 残り時間
     @State private var intervalTimer: Timer? = nil
     @State private var isIntervalTimerRunning: Bool = false
     // -------------------------------------
-
+    
     // TODO: APIから取得したメニュー詳細を保持する状態変数
     // @State private var menuDetails: TrainingMenu? = nil
-
+    
     // --- ダミーのエクササイズデータ (更新) ---
     @State private var exercises: [Exercise] = [
         Exercise(title: "ベンチプレス", targetSets: 3),
@@ -65,11 +67,11 @@ struct TrainingView: View {
         Exercise(title: "ラットプルダウン", targetSets: 3)
     ]
     // -------------------------------------
-
+    
     // --- 現在選択中のエクササイズのインデックス ---
     @State private var selectedExerciseIndex = 0
     // -------------------------------------
-
+    
     // --- 数値セレクター関連の状態変数 ---
     @State private var isShowingNumberSelector = false
     // 選択中のターゲット (exerciseIndex, setIndex, fieldType)
@@ -77,11 +79,11 @@ struct TrainingView: View {
     // ピッカーで編集中の一時的な値
     @State private var currentEditingValue: String = ""
     // ---------------------------------
-
+    
     // --- 表示中カードの動的な高さ計算 ---
     var currentCardHeight: CGFloat {
         guard !exercises.isEmpty, selectedExerciseIndex < exercises.count else {
-             return 150 // デフォルト高さ (エラーケース)
+            return 150 // デフォルト高さ (エラーケース)
         }
         let baseHeight: CGFloat = 80 // タイトル、上下パディング等の基本高さ
         let heightPerSet: CGFloat = 45 // 1セットあたりの高さ (TextField + spacing)
@@ -89,14 +91,14 @@ struct TrainingView: View {
         return baseHeight + CGFloat(numSets) * heightPerSet
     }
     // ----------------------------------
-
+    
     // 経過時間をフォーマットするコンピューテッドプロパティ
     var formattedElapsedTime: String {
         let minutes = Int(elapsedTime) / 60
         let seconds = Int(elapsedTime) % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
-
+    
     // --- インターバル残り時間をフォーマット ---
     var formattedIntervalTime: String {
         let minutes = Int(intervalRemainingTime) / 60
@@ -104,138 +106,141 @@ struct TrainingView: View {
         return String(format: "%02d:%02d", minutes, seconds)
     }
     // ------------------------------------
-
+    
     var body: some View {
         ZStack {
-            // --- メインコンテンツ --- (既存のVStack)
-            VStack(alignment: .leading) {
-
-                // --- インターバルタイマーUI ---
-                HStack {
-                    Spacer() // 中央寄せのためのSpacer
-                    VStack(spacing: 10) { // <<< spacingを追加して間隔を詰める
-                        Text("インターバル")
-                            .font(.caption)
-                        Text(formattedIntervalTime)
-                            .font(.system(size: 60, weight: .bold, design: .monospaced))
-
-                        // --- 3つの円形ボタンに変更 ---
-                        HStack(spacing: 25) { // ボタン間のスペース
-                            // リセットボタン
-                            Button {
-                                resetIntervalTimer()
-                            } label: {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.title2)
-                                    .frame(width: 60, height: 60)
-                                    .background(Color.primary)
-                                    .foregroundColor(Color(uiColor: .systemBackground))
-                                    .clipShape(Circle())
-                            }
-
-                            // +1分ボタン
-                            Button {
-                                intervalRemainingTime += 60
-                                // targetIntervalも更新する場合はここに追加
-                                // resetIntervalTimer(newInterval: targetInterval + 60)
-                            } label: {
-                                Image(systemName: "plus")
-                                    .font(.title2)
-                                    .frame(width: 60, height: 60)
-                                    .background(Color.primary)
-                                    .foregroundColor(Color(uiColor: .systemBackground))
-                                    .clipShape(Circle())
-                            }
-
-                            // 開始/停止ボタン
-                            Button {
-                                if isIntervalTimerRunning {
-                                    stopIntervalTimer()
-                                } else {
-                                    startIntervalTimer()
+            // --- メインコンテンツ --- を ScrollView でラップ
+            ScrollView {
+                VStack(alignment: .leading) {
+                    
+                    // --- インターバルタイマーUI ---
+                    HStack {
+                        Spacer() // 中央寄せのためのSpacer
+                        VStack(spacing: 10) { // <<< spacingを追加して間隔を詰める
+                            Text("インターバル")
+                                .font(.caption)
+                            Text(formattedIntervalTime)
+                                .font(.system(size: 60, weight: .bold, design: .monospaced))
+                            
+                            // --- 3つの円形ボタンに変更 ---
+                            HStack(spacing: 25) { // ボタン間のスペース
+                                // リセットボタン
+                                Button {
+                                    resetIntervalTimer()
+                                } label: {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.title2)
+                                        .frame(width: 60, height: 60)
+                                        .background(Color.primary)
+                                        .foregroundColor(Color(uiColor: .systemBackground))
+                                        .clipShape(Circle())
                                 }
-                            } label: {
-                                Image(systemName: isIntervalTimerRunning ? "pause.fill" : "play.fill")
-                                    .font(.title2)
-                                    .frame(width: 60, height: 60)
-                                    .background(Color.primary)
-                                    .foregroundColor(Color(uiColor: .systemBackground))
-                                    .clipShape(Circle())
-                            }
-                        }
-                        // -------------------------
-                    }
-                    Spacer() // 中央寄せのためのSpacer
-                }
-                .padding(.vertical) // 上下にパディング
-                // ---------------------------
-
-                // --- エクササイズカード表示 (ページング) ---
-                TabView(selection: $selectedExerciseIndex) {
-                    ForEach(Array(exercises.enumerated()), id: \.element.id) { exerciseIndex, exercise in
-                        // カード内容のVStack
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(exercise.title)
-                                .font(.title2.bold())
-                                .padding(.bottom, 5)
-
-                            // セットごとの入力フォーム
-                            ForEach(0..<exercise.targetSets, id: \.self) { setIndex in
-                                HStack(spacing: 8) {
-                                    Text("Set \(setIndex + 1)")
-                                        .frame(width: 50, alignment: .leading)
-
-                                    // --- TextFieldをタップ可能なTextに変更 ---
-                                    Text(exercises[exerciseIndex].records[setIndex].weight.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].weight)
-                                        .padding(8)
-                                        .frame(maxWidth: .infinity)
-                                        .background(Color(uiColor: .tertiarySystemBackground))
-                                        .cornerRadius(5)
-                                        .onTapGesture {
-                                            showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .weight)
-                                        }
-
-                                    Text(exercises[exerciseIndex].records[setIndex].reps.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].reps)
-                                        .padding(8)
-                                        .frame(maxWidth: .infinity)
-                                        .background(Color(uiColor: .tertiarySystemBackground))
-                                        .cornerRadius(5)
-                                        .onTapGesture {
-                                            showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .reps)
-                                        }
-
-                                    Text(exercises[exerciseIndex].records[setIndex].rpe.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].rpe)
-                                        .padding(8)
-                                        .frame(maxWidth: .infinity)
-                                        .background(Color(uiColor: .tertiarySystemBackground))
-                                        .cornerRadius(5)
-                                        .onTapGesture {
-                                            showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .rpe)
-                                        }
-                                    // --------------------------------------
+                                
+                                // +1分ボタン
+                                Button {
+                                    intervalRemainingTime += 60
+                                    // targetIntervalも更新する場合はここに追加
+                                    // resetIntervalTimer(newInterval: targetInterval + 60)
+                                } label: {
+                                    Image(systemName: "plus")
+                                        .font(.title2)
+                                        .frame(width: 60, height: 60)
+                                        .background(Color.primary)
+                                        .foregroundColor(Color(uiColor: .systemBackground))
+                                        .clipShape(Circle())
+                                }
+                                
+                                // 開始/停止ボタン
+                                Button {
+                                    if isIntervalTimerRunning {
+                                        stopIntervalTimer()
+                                    } else {
+                                        startIntervalTimer()
+                                    }
+                                } label: {
+                                    Image(systemName: isIntervalTimerRunning ? "pause.fill" : "play.fill")
+                                        .font(.title2)
+                                        .frame(width: 60, height: 60)
+                                        .background(Color.primary)
+                                        .foregroundColor(Color(uiColor: .systemBackground))
+                                        .clipShape(Circle())
                                 }
                             }
-                            Spacer() // 上に詰める
+                            // -------------------------
                         }
-                        .padding() // カード内のパディング (左右に適用)
-                        .padding(.top, 30) // タイトルの上にさらにパディングを追加
-                        .padding(.bottom, 50) // カード下部にパディングを追加してドットとの間にスペースを作る
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading) // 左上揃え
-                        .background(Color(uiColor: .systemBackground))
-                        .cornerRadius(10)
-                        .padding(.horizontal, 20) // 左右に少し余白を持たせる
-                        .tag(exerciseIndex) // 各ページにインデックスをタグ付け
+                        Spacer() // 中央寄せのためのSpacer
                     }
+                    .padding(.vertical) // 上下にパディング
+                    // ---------------------------
+                    
+                    // --- エクササイズカード表示 (ページング) ---
+                    TabView(selection: $selectedExerciseIndex) {
+                        ForEach(Array(exercises.enumerated()), id: \.element.id) { exerciseIndex, exercise in
+                            // カード内容のVStack
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(exercise.title)
+                                    .font(.title2.bold())
+                                    .padding(.bottom, 5)
+                                
+                                // セットごとの入力フォーム
+                                ForEach(0..<exercise.targetSets, id: \.self) { setIndex in
+                                    HStack(spacing: 8) {
+                                        Text("Set \(setIndex + 1)")
+                                            .frame(width: 50, alignment: .leading)
+                                        
+                                        // --- TextFieldをタップ可能なTextに変更 ---
+                                        Text(exercises[exerciseIndex].records[setIndex].weight.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].weight)
+                                            .padding(8)
+                                            .frame(maxWidth: .infinity)
+                                            .background(Color(uiColor: .tertiarySystemBackground))
+                                            .cornerRadius(5)
+                                            .onTapGesture {
+                                                showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .weight)
+                                            }
+                                        
+                                        Text(exercises[exerciseIndex].records[setIndex].reps.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].reps)
+                                            .padding(8)
+                                            .frame(maxWidth: .infinity)
+                                            .background(Color(uiColor: .tertiarySystemBackground))
+                                            .cornerRadius(5)
+                                            .onTapGesture {
+                                                showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .reps)
+                                            }
+                                        
+                                        Text(exercises[exerciseIndex].records[setIndex].rpe.isEmpty ? "-" : exercises[exerciseIndex].records[setIndex].rpe)
+                                            .padding(8)
+                                            .frame(maxWidth: .infinity)
+                                            .background(Color(uiColor: .tertiarySystemBackground))
+                                            .cornerRadius(5)
+                                            .onTapGesture {
+                                                showNumberSelector(exerciseIndex: exerciseIndex, setIndex: setIndex, fieldType: .rpe)
+                                            }
+                                        // --------------------------------------
+                                    }
+                                }
+                                Spacer() // 上に詰める
+                            }
+                            .padding() // カード内のパディング (左右に適用)
+                            .padding(.top, 30) // タイトルの上にさらにパディングを追加
+                            .padding(.bottom, 50) // カード下部にパディングを追加してドットとの間にスペースを作る
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading) // 左上揃え
+                            .background(Color(uiColor: .systemBackground))
+                            .cornerRadius(10)
+                            .padding(.horizontal, 20) // 左右に少し余白を持たせる
+                            .tag(exerciseIndex) // 各ページにインデックスをタグ付け
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .automatic)) // ページングスタイルとドット表示
+                    .frame(height: currentCardHeight + 60) // 計算された高さを適用
+                    // ------------------------------------
+                    
+                    // Spacer() // <<< ScrollView内では不要なため削除
                 }
-                .tabViewStyle(.page(indexDisplayMode: .automatic)) // ページングスタイルとドット表示
-                .frame(height: currentCardHeight + 60) // 計算された高さを適用
-                // ------------------------------------
-
-                Spacer() // ボタンを一番下に配置するために追加
+                // .padding(.bottom, 80) // <<< ScrollViewを使用するため削除
             }
             .background(Color(uiColor: .systemGray6)) // ビュー全体の背景をグレーに
             // --------------------
-
+            
             // --- 記録ボタン (画面下部固定) ---
             VStack {
                 Spacer() // ボタンを押し下げる
@@ -255,18 +260,29 @@ struct TrainingView: View {
                 .padding(.bottom) // 下部のパディング (SafeAreaを考慮)
             }
             // ---------------------------
-
+            
             // --- 数値セレクター表示関数 ---
             if isShowingNumberSelector {
                 numberSelectorView
             }
         }
         .navigationTitle("トレーニング") // 仮のタイトル
+        .navigationBarBackButtonHidden(true) // <<< デフォルトの戻るボタンを非表示
         .toolbar { // ← toolbar モディファイアを追加
+            // --- 左上にカスタム戻るボタンを追加 ---
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    dismissAndGoHome() // ホームに戻るアクションを実行
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.primary) // ダークモード対応
+                }
+            }
+            // --- 右上の全体タイマー (既存) ---
             ToolbarItem(placement: .navigationBarTrailing) { // 右端に配置
                 Text(formattedElapsedTime)
                     .font(.system(size: 18, weight: .semibold, design: .monospaced)) // フォントサイズを調整
-                    .foregroundColor(.primary) // <<< 変更
+                    .foregroundColor(.primary) // ダークモード対応
             }
         }
         .onAppear {
@@ -448,22 +464,6 @@ struct TrainingView: View {
             return stride(from: 6.0, through: 10.0, by: 0.5).map { String(format: "%.1f", $0) }
         }
     }
-
-    /*
-    // TODO: API通信を行う関数
-    func fetchMenuDetails() {
-        print("API呼び出し: menuID = \(menuID)")
-        // ここで非同期処理を行い、結果を @State 変数にセットする
-        // 例: APIService.shared.getMenuDetails(id: menuID) { result in
-        //     switch result {
-        //     case .success(let details):
-        //         self.menuDetails = details
-        //     case .failure(let error):
-        //         print("APIエラー: \(error)")
-        //     }
-        // }
-    }
-    */
 }
 
 // --- 角丸を特定箇所に適用するための拡張 ---
@@ -486,6 +486,9 @@ struct RoundedCorner: Shape {
 
 #Preview {
     NavigationView {
-        TrainingView(menuID: UUID())
+        TrainingView(menuID: UUID()) {
+            // ホームに戻るためのアクション
+            print("ホームに戻るアクションが実行されました")
+        }
     }
 }
